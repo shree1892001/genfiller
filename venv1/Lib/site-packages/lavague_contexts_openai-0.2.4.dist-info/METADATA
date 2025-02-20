@@ -1,0 +1,31 @@
+Metadata-Version: 2.1
+Name: lavague-contexts-openai
+Version: 0.2.4
+Summary: Openai integration for lavague
+Home-page: https://lavague.ai
+License: Apache-2.0
+Keywords: LAM,action,automation,LLM,NLP,RAG,selenium,playwright
+Author: lavague-ai
+Requires-Python: >=3.10.0,<4.0.0
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Dist: lavague-core (>=0.2.0,<0.3.0)
+Requires-Dist: llama-index-embeddings-azure-openai (==0.1.11)
+Requires-Dist: llama-index-embeddings-openai (>=0.1.9,<0.2.0)
+Requires-Dist: llama-index-llms-azure-openai (==0.1.10)
+Requires-Dist: llama-index-llms-openai (>=0.1.9,<0.2.0)
+Requires-Dist: llama-index-multi-modal-llms-azure-openai (==0.1.4)
+Requires-Dist: llama-index-multi-modal-llms-openai (>=0.1.6,<0.2.0)
+Project-URL: Documentation, https://docs.lavague.ai/en/latest/
+Project-URL: Repository, https://github.com/lavague-ai/LaVague/
+Description-Content-Type: text/markdown
+
+# Openai integration for lavague

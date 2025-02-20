@@ -1,0 +1,46 @@
+{
+    "Contact Person": {
+        "First Name": "Sam",
+        "Last Name": "Altman",
+        "Phone Number": "(555)-(1122221)",
+        "Email": "sam.altman@gpt.com"
+    },
+    "Entity Information": {
+        "Entity Name": "red llc",
+        "Entity Number": 86670,
+        "Comments": "null"
+    },
+    "Limited Liability Company Name": "LLC",
+    "Business Addresses": {
+        "Initial Street Address of Principal Office": {
+            "City": "Albany",
+            "State": "def",
+            "Zip Code": "cde"
+        },
+        "Initial Mailing Address of LLC, if different than item 2a": {
+            "City": "ghi",
+            "State": "lmn",
+            "Zip Code": "599439"
+        }
+    },
+    "Service of Process": {
+        "Individual": {
+            "California Agent's First Name": "redberyl",
+            "Middle Name": "S",
+            "Last Name": "Altman",
+            "Suffix": null,
+            "Street Address": {
+                "City": null,
+                "State": null,
+                "Zip Code": null
+            }
+        },
+        "Corporation": {
+            "California Registered Corporate Agent's Name": "redberyl llc"
+        }
+    },
+    "Management": null,
+    "Purpose Statement": null,
+    "Organizer sign here": null,
+    "Print your name here": null
+}
