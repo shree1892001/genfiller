@@ -10,7 +10,7 @@
         "Entity Number": 86670,
         "Comments": "null"
     },
-    "Limited Liability Company Name": "LLC",
+    "Limited Liability Company Name": "red llc",
     "Business Addresses": {
         "Initial Street Address of Principal Office": {
             "City": "Albany",
@@ -25,7 +25,7 @@
     },
     "Service of Process": {
         "Individual": {
-            "California Agent's First Name": "redberyl",
+            " Agent's First Name": "redberyl",
             "Middle Name": "S",
             "Last Name": "Altman",
             "Suffix": null,
@@ -36,7 +36,7 @@
             }
         },
         "Corporation": {
-            "California Registered Corporate Agent's Name": "redberyl llc"
+            "California Registered Corporate Agents Name": "redberyl llc"
         }
     },
     "Management": null,
