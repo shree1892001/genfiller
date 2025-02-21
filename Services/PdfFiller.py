@@ -167,7 +167,7 @@ class GeminiFormFiller:
             response = await self.agent.run(prompt)
             result = json.loads(response.data.strip().replace("```json", "").replace("```", "").strip())
 
-            # Validate and clean up matches
+
             cleaned_matches = []
             for match in result.get("matches", []):
                 if all(k in match for k in ["json_field", "pdf_field", "confidence", "suggested_value", "reasoning"]):
@@ -195,13 +195,13 @@ class GeminiFormFiller:
             if not os.path.exists(template_pdf):
                 raise FileNotFoundError(f"PDF file not found: {template_pdf}")
 
-            # Extract PDF form fields
+
             reader = PdfReader(template_pdf)
             pdf_fields = reader.get_form_text_fields()
             if pdf_fields is None:
                 raise ValueError("No form fields found in PDF")
 
-            # Get all form fields including checkboxes
+
             pdf_field_list = []
             for page in reader.pages:
                 if '/Annots' in page:
@@ -211,11 +211,11 @@ class GeminiFormFiller:
                             if field_name:
                                 pdf_field_list.append(field_name)
 
-            # Get matches and formatted values from AI
+
             print("\n🤖 Getting AI matches and formatting...")
             result = await self.match_and_format_fields(json_data, pdf_field_list)
 
-            # Validate matches before creating FieldMatch objects
+
             valid_matches = []
             for match in result["matches"]:
                 try:
@@ -225,17 +225,17 @@ class GeminiFormFiller:
                     print(f"Skipping invalid match: {str(e)}")
                     continue
 
-            # Determine unmatched fields using flattened JSON
+
             flat_json = flatten_json(json_data)
             matched_json_fields = {match.json_field for match in valid_matches}
             unmatched = [field for field in flat_json.keys() if field not in matched_json_fields]
 
-            # Fill the PDF
+
             fill_data = {match.pdf_field: match.suggested_value for match in valid_matches}
             print(f"\n📝 Filling PDF with {len(fill_data)} matched fields")
             fillpdfs.write_fillable_pdf(template_pdf, output_pdf, fill_data)
 
-            # Calculate success rate based on flattened fields
+
             success_rate = (len(valid_matches) / len(flat_json)) * 100 if flat_json else 0
 
             result = ProcessingResult(
@@ -302,9 +302,9 @@ class GeminiFormFiller:
             print(traceback.format_exc())
 
 
-# Example usage
+
 async def main():
-    # Example complex nested JSON data
+
     sample_data = {
         "Contact Person": {
             "First Name": "Sam",
@@ -352,15 +352,14 @@ async def main():
         "Print your name here": None
     }
 
-    # Save sample data to JSON file
+
     json_path = "form_data.json"
     with open(json_path, "w") as f:
         json.dump(sample_data, f, indent=4)
 
-    # Initialize the form filler with your API key
     filler = GeminiFormFiller(API_KEY)
 
-    # Process the form
+
     result = await filler.run(
         template_pdf="California_LLC.pdf",
         json_path=json_path,
