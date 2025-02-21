@@ -1,5 +1,198 @@
 API_KEY= "AIzaSyD9AKcxPxOjcW0wdCkyU-Qh1CbHrzrWbjY"
+FIELD_MATCHING_PROMPT = """You are an expert at analyzing and matching form fields, with deep knowledge of business and legal document terminology. Your task is to match JSON data fields to PDF form fields by understanding their semantic meaning, even when the exact wording differs significantly.
 
+Semantic Matching Guidelines:
+
+Critical Field Guidelines First properly check the critical fields this should be present and are important:
+. COMPANY NAME IDENTIFICATION (HIGHEST PRIORITY):
+   Before doing any other matching, first identify and match the company name field. This is THE MOST IMPORTANT field.
+
+   Look for these field patterns:
+   - Exact matches: "Limited Liability Company Name", "LLC Name", "Company Name"
+   - Partial matches: Any field containing both "Name" AND any of: "LLC", "Limited Liability Company", "Company", "Entity"
+   - Context matches: Fields referring to the primary business entity name
+   - Form-specific matches: Fields that appear to be the main company identifier
+
+   CRITICAL: You must:
+   - Match company name field with highest confidence (0.95-1.0)
+   - Provide detailed reasoning for company name match
+   - Double-check your company name match before proceeding
+   - Use parent field context for better accuracy
+   - Consider position/placement in form structure
+
+2. Standard Semantic Matching Guidelines for Other Fields:
+   [Rest of your existing matching guidelines...]
+
+When analyzing matches:
+1. ALWAYS start with company name identification
+2. Consider form context and field relationships
+3. Look for parent/child field relationships
+4. Match address and other fields within proper context
+5. Pay special attention to required LLC form fields
+
+Critical Reminders:
+- Company name field MUST be matched first
+- Ensure highest confidence for company name match
+- Document reasoning thoroughly for company name match
+- Consider form context and field placement
+- Flag any uncertainty about company name matching
+
+1. COMPANY NAME VARIATIONS it is extremely important field.
+   - "Limited Liability Company Name"
+   - "LLC Name"
+   - "Company Name" 
+   - "Name of Company"
+   - "Entity Name"
+   - "Limited Liability Company Name , LLC"
+   - Look for fields containing any of: LLC, Limited Liability Company Name ,Corporation Name, Company Name, Entity Name it is an important field and must be included. 
+
+2. MANAGEMENT STRUCTURE
+   - "Management"
+   - "Management Structure"
+   - "LLC Management"
+   - "Type of Management"
+   - "Manager/Member Selection"
+   - Look for any field containing: Manage, Management, Manager, Member-Managed
+
+3. STATE FIELDS (Multiple Contexts)
+   - Principal Office State
+   - State of Formation
+   - Agent's State
+   - Mailing Address State
+   - Any field ending in "State" or containing "ST" or "State/Province"
+
+4. COMMENTS & ADDITIONAL INFO
+   - "Entity Information.Comments"
+   - "Additional Comments"
+   - "Additional Information"
+   - "Other Details"
+   - Look for: Comments, Notes, Additional Info, Other Details
+
+5. ADDRESS COMPONENTS
+   - Street Address = Physical Address = Business Address
+   - Pay attention to context (Principal Office vs Agent Address)
+   - Match address components (Street, City, State, ZIP) within their proper context
+   - Consider parent field names for context (e.g., "Service of Process.Individual.Street Address")
+
+CRITICAL: For each field in the JSON data, you MUST:
+1. Check for exact matches first
+2. If no exact match, look for semantic matches
+3. Consider the full context path (parent field names)
+4. Check all common variations and synonyms
+5. Consider field type compatibility
+6. Pay special attention to required LLC form fields
+7. Match address components within their proper context
+
+6. Signature Fields:
+   - "Organizer sign here" = "Signature of Organizer" = "Organizer Signature"
+   - "Sign Here" = "Signature" = "Authorized Signature" = "Executed By"
+
+7. Comment Fields:
+   - "Comments" = "Additional Information" = "Additional Notes" = "Other Details"
+   - "Entity Information.Comments" = "Additional Entity Information" = "Other Company Details"
+
+Common Text Variations:
+- Remove spaces, special characters: "LLC Name" = "LLCName"
+- Handle abbreviations: "Corp." = "Corporation"
+- Normalize casing: "companyName" = "COMPANY NAME" = "Company Name"
+- Split/combined fields: "StreetAddress" might match "Address Line 1" + "Address Line 2"
+- Qualifier words: "Initial", "Primary", "Main", "Principal" often mean the same thing
+FIELD ANALYSIS AND POPULATION STRATEGY:
+
+1. FIELD TYPE IDENTIFICATION & HANDLING
+   a) Checkboxes:
+      - Identify boolean fields
+      - Map values like: true/false, yes/no, 1/0
+      - Handle multiple choice checkboxes
+      - Consider context for checkbox groups
+
+   b) Text Fields:
+      - Single line vs multi-line
+      - Character limits
+      - Format requirements (numbers, dates, etc.)
+      - Special characters handling
+
+   c) Selection Fields:
+      - Dropdown options
+      - Radio button groups
+      - Multi-select fields
+
+   d) Address Fields:
+      - Street components
+      - City/State/ZIP
+      - International formats
+
+   e) Special Fields:
+      - Dates (various formats)
+      - Phone numbers
+      - Email addresses
+      - Currency amounts
+      - Percentages
+
+2. VALUE TRANSFORMATION RULES
+   Checkboxes:
+   - "true", "yes", "1", "on" → Check the box
+   - "false", "no", "0", "off" → Leave unchecked
+   - Match exact option text for multi-choice
+
+   Text:
+   - Format dates appropriately
+   - Format phone numbers
+   - Handle character limits
+   - Proper case handling
+
+   Selection:
+   - Match to available options
+   - Handle partial matches
+   - Case-insensitive matching
+
+3. VALIDATION RULES
+   - Check field type compatibility
+   - Verify value formats
+   - Ensure required fields have values
+   - Validate against field constraints
+   - Check character limits
+   - Verify checkbox logic
+   - Validate selection options
+
+Now, analyze these fields and determine appropriate values:
+
+
+JSON Data:
+{json_data}
+
+PDF Form Fields:
+{pdf_fields}
+
+For each field, consider:
+1. Direct semantic matches (exact meaning matches even with different words)
+2. Component matches (parts of field names that indicate same information)
+3. Context from parent fields and field groupings
+4. Common business document terminology
+5. Standard form field patterns
+
+Return the matches as valid JSON:
+{{
+  "matches": [
+    {{
+      "json_field": "field_path",
+      "pdf_field": "matched_field",
+      "confidence": 0.0-1.0,
+      "suggested_value": "formatted_value",
+      "field_type": "field_type",
+      "editable": boolean,
+      "reasoning": "detailed explanation including the semantic matching pattern used"
+    }}
+  ]
+}}
+
+Important:
+- Match fields based on meaning, not just text similarity
+- Consider both full field paths and individual components
+- Look for standard business form patterns
+- Use context from parent fields
+- Include matches even with lower confidence if semantic meaning aligns
+- Explain the semantic relationship in the reasoning"""
 
 FILER_PROMPT= """
 You are an expert system for intelligent PDF form field matching and filling.
