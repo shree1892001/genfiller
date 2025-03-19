@@ -1,219 +1,321 @@
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase import pdfform
-from reportlab.lib.colors import black
-from reportlab.pdfbase import pdfdoc
-from reportlab.pdfbase.pdfmetrics import stringWidth
-import io
+import fitz  # PyMuPDF
+import ocrmypdf
+import json
+import os
+import shutil
+import logging
+from typing import Dict, Any, List, Tuple
+import asyncio
+from pydantic import BaseModel, Field, field_validator
+from pydantic_ai import Agent
+from pydantic_ai.models.gemini import GeminiModel
+from concurrent.futures import ThreadPoolExecutor
+from Common.constants import *
 
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('form_filler.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-def create_sample_form():
-    """Create a sample fillable PDF form"""
+class FieldMatch(BaseModel):
+    json_field: str
+    pdf_field: str
+    confidence: float
+    suggested_value: Any
+    reasoning: str
 
-    # Create PDF buffer
-    buffer = io.BytesIO()
+    @field_validator("confidence")
+    def validate_confidence(cls, v):
+        if not (0 <= v <= 1):
+            raise ValueError("Confidence must be between 0 and 1")
+        return float(v)
 
-    # Create the canvas
-    c = canvas.Canvas(buffer)
-    c.setFont("Helvetica", 12)
+class PDFEncoder(json.JSONEncoder):
+    """Custom JSON encoder for PDF-specific objects."""
+    def default(self, obj):
+        if hasattr(obj, 'tolist'):
+            return obj.tolist()
+        elif isinstance(obj, fitz.Rect):
+            return [obj.x0, obj.y0, x1, y1] = list(obj)
+            return [x0, y0, x1, y1]
+        return super().default(obj)
 
-    # Form title
-    c.drawString(50, 800, "Sample Employee Information Form")
-    c.setFont("Helvetica", 10)
+class MultiAgentFormFiller:
+    def __init__(self):
+        self.ai_agent = Agent(
+            model=GeminiModel("gemini-1.5-flash", api_key=API_KEY_3),
+            system_prompt="""You are an expert at PDF form processing and field matching.
+            Focus on matching fields accurately based on field names, types, and context.
+            Only provide high-confidence matches with clear reasoning."""
+        )
+        self.thread_pool = ThreadPoolExecutor(max_workers=min(32, (os.cpu_count() or 1) * 4))
 
-    # Personal Information Section
-    c.drawString(50, 750, "Personal Information")
-    c.line(50, 745, 550, 745)
+    def __del__(self):
+        if hasattr(self, 'thread_pool'):
+            self.thread_pool.shutdown(wait=True)
 
-    # Full Name field
-    c.drawString(50, 720, "Full Name:")
-    form = c.acroForm
-    form.textfield(
-        name='full_name',
-        tooltip='Enter full name',
-        x=150,
-        y=715,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+    async def process_pdf(self, pdf_path: str, json_data: Dict[str, Any], output_pdf: str) -> bool:
+        """Process PDF form using AI-driven analysis and filling."""
+        try:
+            logger.info(f"Starting PDF processing: {pdf_path}")
+            
+            # Create backup
+            backup_pdf = f"{pdf_path}.backup"
+            shutil.copy2(pdf_path, backup_pdf)
+            logger.info(f"Created backup: {backup_pdf}")
 
-    # Email field
-    c.drawString(50, 680, "Email Address:")
-    form.textfield(
-        name='email_address',
-        tooltip='Enter email address',
-        x=150,
-        y=675,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+            # Extract PDF fields
+            pdf_fields = await self.extract_pdf_fields(pdf_path)
+            if not pdf_fields:
+                logger.error("No PDF fields found")
+                return False
 
-    # Phone field
-    c.drawString(50, 640, "Phone Number:")
-    form.textfield(
-        name='phone_number',
-        tooltip='Enter phone number',
-        x=150,
-        y=635,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+            # Process fields in batches
+            all_matches = []
+            field_batches = self.create_field_batches(pdf_fields, json_data, batch_size=5)
+            
+            for batch_num, (pdf_batch, json_batch) in enumerate(field_batches, 1):
+                logger.info(f"Processing batch {batch_num}")
+                batch_matches = await self.process_field_batch(pdf_batch, json_batch)
+                if batch_matches:
+                    all_matches.extend(batch_matches)
 
-    # Address field
-    c.drawString(50, 600, "Mailing Address:")
-    form.textfield(
-        name='mailing_address',
-        tooltip='Enter mailing address',
-        x=150,
-        y=595,
-        width=300,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+            if not all_matches:
+                logger.warning("No valid matches found in any batch")
+                return False
 
-    # Professional Information Section
-    c.drawString(50, 550, "Professional Information")
-    c.line(50, 545, 550, 545)
+            logger.info(f"Found {len(all_matches)} total matches")
 
-    # Job Title field
-    c.drawString(50, 520, "Current Position:")
-    form.textfield(
-        name='job_title',
-        tooltip='Enter current job title',
-        x=150,
-        y=515,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+            # Fill the form
+            success = await self.fill_form(pdf_path, output_pdf, all_matches)
+            return success
 
-    # Department field
-    c.drawString(50, 480, "Department:")
-    form.textfield(
-        name='department',
-        tooltip='Enter department',
-        x=150,
-        y=475,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+        except Exception as e:
+            logger.error(f"Error in process_pdf: {str(e)}", exc_info=True)
+            return False
 
-    # Start Date field
-    c.drawString(50, 440, "Start Date:")
-    form.textfield(
-        name='start_date',
-        tooltip='Enter start date (YYYY-MM-DD)',
-        x=150,
-        y=435,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+    async def extract_pdf_fields(self, pdf_path: str) -> Dict[str, Dict]:
+        """Extract fields from PDF with error handling."""
+        try:
+        doc = fitz.open(pdf_path)
+        fields = {}
 
-    # Employee ID field
-    c.drawString(50, 400, "Employee ID:")
-    form.textfield(
-        name='employee_id',
-        tooltip='Enter employee ID',
-        x=150,
-        y=395,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+            for page_num in range(len(doc)):
+                page = doc[page_num]
+            for widget in page.widgets():
+                if widget.field_name:
+                        fields[widget.field_name] = {
+                            "page_num": page_num,
+                            "type": widget.field_type,
+                            "rect": list(widget.rect),
+                            "value": widget.field_value
+                        }
+            
+            doc.close()
+            logger.info(f"Extracted {len(fields)} fields from PDF")
+            return fields
+            
+        except Exception as e:
+            logger.error(f"Error extracting PDF fields: {str(e)}", exc_info=True)
+            return {}
 
-    # Emergency Contact Section
-    c.drawString(50, 350, "Emergency Contact Information")
-    c.line(50, 345, 550, 345)
+    def create_field_batches(self, pdf_fields: Dict, json_data: Dict, batch_size: int) -> List[Tuple[Dict, Dict]]:
+        """Create batches of fields for processing."""
+        batches = []
+        pdf_items = list(pdf_fields.items())
+        json_items = list(json_data.items())
+        
+        for i in range(0, len(pdf_items), batch_size):
+            pdf_batch = dict(pdf_items[i:i + batch_size])
+            json_batch = dict(json_items[i:i + batch_size])
+            batches.append((pdf_batch, json_batch))
+        
+        return batches
 
-    # Emergency Contact Name
-    c.drawString(50, 320, "Contact Name:")
-    form.textfield(
-        name='emergency_contact_name',
-        tooltip='Enter emergency contact name',
-        x=150,
-        y=315,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+    async def process_field_batch(self, pdf_fields: Dict, json_data: Dict) -> List[Dict]:
+        """Process a batch of fields."""
+        try:
+            prompt = f"""Analyze and match these PDF form fields with JSON data.
+            
+PDF FIELDS:
+{json.dumps(pdf_fields, indent=2)}
 
-    # Emergency Contact Phone
-    c.drawString(50, 280, "Contact Phone:")
-    form.textfield(
-        name='emergency_contact_phone',
-        tooltip='Enter emergency contact phone',
-        x=150,
-        y=275,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+        JSON DATA:
+{json.dumps(json_data, indent=2)}
 
-    # Emergency Contact Relationship
-    c.drawString(50, 240, "Relationship:")
-    form.textfield(
-        name='emergency_contact_relation',
-        tooltip='Enter relationship to emergency contact',
-        x=150,
-        y=235,
-        width=200,
-        height=20,
-        borderStyle='solid',
-        borderWidth=1
-    )
+Match fields based on:
+1. Field name similarity
+2. Field type compatibility
+3. Expected value format
 
-    # Save the PDF
-    c.save()
+Respond with ONLY a JSON array of matches in this format:
+[
+    {{
+        "json_field": "exact_json_field_name",
+        "pdf_field": "exact_pdf_field_name",
+        "value": "formatted_value",
+                    "confidence": 0.95,
+        "reasoning": "brief_explanation"
+    }}
+]"""
 
-    # Get the value of the buffer
-    pdf_value = buffer.getvalue()
-    buffer.close()
+            logger.info("Requesting AI analysis for batch")
+            response = await self.ai_agent.run(prompt)
+            matches = self.parse_ai_response(response.data)
+            
+            if not matches:
+                return []
+                
+            # Validate matches
+            valid_matches = []
+            for match in matches:
+                if self.validate_match(match, pdf_fields, json_data):
+                    valid_matches.append(match)
+            
+            logger.info(f"Found {len(valid_matches)} valid matches in batch")
+            return valid_matches
+            
+        except Exception as e:
+            logger.error(f"Error processing field batch: {str(e)}", exc_info=True)
+            return []
 
-    return pdf_value
+    def validate_match(self, match: Dict, pdf_fields: Dict, json_data: Dict) -> bool:
+        """Validate a single field match."""
+        try:
+            required_keys = ["json_field", "pdf_field", "value", "confidence", "reasoning"]
+            if not all(key in match for key in required_keys):
+                return False
+                
+            if not (0 <= match["confidence"] <= 1):
+                return False
 
+            if match["json_field"] not in json_data:
+                return False
+                
+            if match["pdf_field"] not in pdf_fields:
+                return False
+                
+            return True
+            
+        except Exception:
+            return False
 
-def save_sample_form(output_path: str = "sample_form.pdf"):
-    """Save the sample form to a file"""
-    pdf_content = create_sample_form()
-    with open(output_path, 'wb') as f:
-        f.write(pdf_content)
-    print(f"Sample form created at: {output_path}")
+    def parse_ai_response(self, response: str) -> List[Dict]:
+        """Parse AI response with enhanced error handling."""
+        try:
+            # Clean up response
+            json_str = response.strip()
+            
+            # Extract JSON array
+            start_idx = json_str.find("[")
+            end_idx = json_str.rfind("]")
+            
+            if start_idx >= 0 and end_idx > start_idx:
+                json_str = json_str[start_idx:end_idx + 1]
+                
+            # Remove markdown and parse
+            json_str = json_str.replace("```json", "").replace("```", "")
+            return json.loads(json_str)
+            
+        except Exception as e:
+            logger.error(f"Error parsing AI response: {str(e)}")
+            logger.debug(f"Raw response: {response[:200]}")
+            return []
 
+    async def fill_form(self, pdf_path: str, output_pdf: str, matches: List[Dict]) -> bool:
+        """Fill PDF form with enhanced error handling."""
+        temp_pdf = None
+        doc = None
+        
+        try:
+            # Create temporary output
+            temp_pdf = f"{output_pdf}.temp"
+            shutil.copy2(pdf_path, temp_pdf)
+            
+            doc = fitz.open(temp_pdf)
+            filled_count = 0
+            
+            for match in matches:
+                if match["confidence"] >= 0.85:
+                    success = await self.fill_single_field(doc, match)
+                    if success:
+                        filled_count += 1
+            
+            if filled_count > 0:
+                # Save with careful error handling
+                try:
+                    doc.save(temp_pdf, garbage=4, deflate=True, clean=True)
+                    doc.close()
+                    doc = None
+                    shutil.move(temp_pdf, output_pdf)
+                    logger.info(f"Successfully filled {filled_count} fields")
+                    return True
+                except Exception as e:
+                    logger.error(f"Error saving PDF: {str(e)}", exc_info=True)
+                    return False
+            else:
+                logger.warning("No fields were filled")
+                return False
 
-# Generate sample JSON data matching the form fields
-SAMPLE_JSON_DATA = {
-    "full_name": "John Doe",
-    "email_address": "john.doe@example.com",
-    "phone_number": "123-456-7890",
-    "mailing_address": "123 Main St, City, State 12345",
-    "job_title": "Software Engineer",
-    "department": "Engineering",
-    "start_date": "2024-01-01",
-    "employee_id": "EMP001",
-    "emergency_contact_name": "Jane Doe",
-    "emergency_contact_phone": "987-654-3210",
-    "emergency_contact_relation": "Spouse"
-}
+        except Exception as e:
+            logger.error(f"Error filling form: {str(e)}", exc_info=True)
+            return False
+            
+        finally:
+            # Cleanup
+            if doc:
+                try:
+                    doc.close()
+                except:
+                    pass
+            if temp_pdf and os.path.exists(temp_pdf):
+                try:
+                    os.remove(temp_pdf)
+                except:
+                    pass
+
+    async def fill_single_field(self, doc: fitz.Document, match: Dict) -> bool:
+        """Fill a single form field with error handling."""
+        try:
+            for page in doc:
+                for widget in page.widgets():
+                    if widget.field_name == match["pdf_field"]:
+                        widget.field_value = match["value"]
+                        widget.update()
+                        logger.info(f"Filled field {match['pdf_field']} = {match['value']}")
+                        return True
+            return False
+        except Exception as e:
+            logger.error(f"Error filling field {match['pdf_field']}: {str(e)}")
+            return False
+
+async def main():
+    form_filler = MultiAgentFormFiller()
+    template_pdf = "D:\\demo\\Services\\WisconsinLLC.pdf"
+    json_path = "D:\\demo\\Services\\form_data.json"
+    output_pdf = "D:\\demo\\Services\\fill_smart2.pdf"
+
+    try:
+        # Load JSON data
+    with open(json_path, "r", encoding="utf-8") as f:
+        json_data = json.load(f)
+
+        # Process the form
+        success = await form_filler.process_pdf(template_pdf, json_data, output_pdf)
+
+    if success:
+            logger.info(f"PDF successfully processed: {output_pdf}")
+    else:
+            logger.error("PDF processing failed")
+
+    except Exception as e:
+        logger.error(f"Error during processing: {str(e)}", exc_info=True)
 
 if __name__ == "__main__":
-    # Create the sample form
-    save_sample_form()
-
-    # Save the sample JSON data
-    with open("sample_data.json", "w") as f:
-        json.dump(SAMPLE_JSON_DATA, f, indent=4)
-    print("Sample JSON data created at: sample_data.json")
+    asyncio.run(main())

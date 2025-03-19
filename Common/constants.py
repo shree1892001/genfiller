@@ -1,4 +1,13 @@
-API_KEY= "AIzaSyD9AKcxPxOjcW0wdCkyU-Qh1CbHrzrWbjY"
+import json
+
+DEFAULT_API_KEY ="AIzaSyAvNz1x-OZl3kUDEm4-ZhwzJJy1Tqq6Flg"
+API_KEY_1 ="AIzaSyBdgesVDKSwGPoJrF0lh5sA4iRWJOEUQwc"
+API_KEY_2 ="AIzaSyBdgesVDKSwGPoJrF0lh5sA4iRWJOEUQwc"
+API_KEY_3 ="AIzaSyCTqp_VyTh5n9GKrVETOO8SsKng76FkqYo"
+API_KEY_4 ="AIzaSyBdgesVDKSwGPoJrF0lh5sA4iRWJOEUQwc"
+
+
+
 FIELD_MATCHING_PROMPT = """
 You are an expert at analyzing and matching form fields, with deep knowledge of business and legal document terminology. Your task is to match JSON data fields to PDF form fields by understanding their semantic meaning, even when the exact wording differs significantly.
 
@@ -21,7 +30,8 @@ HIGHEST PRIORITY FIELDS (MUST BE MATCHED):
   -"Limited Liability Name LLC"
   -"LLC"
   Check for the word Limited Liability Company Name and fill in the value
-3. Address Information
+3. The Order ID is mandatory and should be mapped from one of these JSON keys: "orderId", "orderDetails.orderId", "data.orderDetails.orderId", "entityNumber", or "registrationNumber".
+4. Address Information
    - Principal office location
    - Mailing address
    - Agent for service address
@@ -33,7 +43,7 @@ HIGHEST PRIORITY FIELDS (MUST BE MATCHED):
 5. Organizer Details: 
   - Add  organizer name as the signature in the field mentioned 
 
-5. Legal Requirements
+6. Legal Requirements
    - Registered agent information
    - State filing details
    - Tax and regulatory information
@@ -75,13 +85,14 @@ Return matches in this exact format (do not modify the structure):
 
 For company name fields:
 - Set confidence to 1.0 for exact matches
--cnsider the fields if they are slightly matching or very less mathcing 
+-consider the fields if they are slightly matching or very less mathcing 
 - Preserve exact capitalization and spacing
 - Do not abbreviate or modify the company name
 - Include detailed reasoning for the match 
 - Fill all the fields even if they are  by semantic search dont keep anything blank and even if they are seem unnecessaary
 
 """
+API_KEY= "AIzaSyBHkJvcositehBgALC6ONIiOwBvjsgPfZY"
 FIELD_MATCHING_PROMPT1 = """
 You are an expert form field matching AI with deep knowledge of business documents and legal terminology. Analyze and match JSON data fields to PDF form fields based on semantic meaning and context.
 SPECIAL ATTENTION - COMPANY NAME FIELDS:
@@ -89,9 +100,116 @@ SPECIAL ATTENTION - COMPANY NAME FIELDS:
 - Choose the most appropriate company name value when multiple exist
 - Ensure the company name is matched to the correct PDF field
 - Common PDF field variations include "Limited Liability Company Name", "LLC Name", etc.
+-ENTITY NUMBER / ORDER ID MAPPING:
+   PDF Field Patterns:
+   - "Entity Number"
+   - "Entity Number if applicable"
+   - "Entity Information"
+   
+   
+   - "Filing Number"
+   - "Registration ID"
+
+   JSON Field Patterns:
+   - "orderId"                    # PRIMARY MATCH FOR ENTITY NUMBER
+   - "orderDetails.orderId"
+   - "data.orderDetails.orderId"
+   - "entityNumber"
+   - "registrationNumber"
+   - Any field ending with "Id" or "Number"
+   
+
+   Agent Name and Address Fields:
+   PDF Patterns:
+   - "Get the agent first and Last Name from the data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name split the name in way example if name is "Corporate Creations Network Inc." then first name  would be "Corporate" and LastName would be "Creations Network Inc." search for ssik
+   - "Agent Street Address"
+   - "Agent Physical Address"
+   - "b Street Address (if agent is not a corporation)"
+   - "City no abbreviations_3"
+   - "Zip Code_3"
+   - "Agent State"
+
+   JSON Patterns:
+   - "RA_Address_Line_1"
+   - "agent.address"
+   - "registeredAgent.streetAddress"
+   - "Registered_Agent.Address"
+
+   Agent Contact Information:
+   PDF Patterns:
+   - "Agent Phone"
+   - "Agent Email"
+   - "Agent Contact Number"
+
+   JSON Patterns:
+   - "RA_Email_Address"
+   - "RA_Contact_No"
+   - "agent.contactDetails"
+   
+  Principal Address: 
+      find the principal address field   in the pdf 
+      - fill the address line 1 pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1 or similar json field 
+      - fill the address line 2 pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_2 or similar json field 
+      - fill the city pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_City or similar json field
+      - fill the state pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_State or similar json field 
+      - fill the Zip or Zip Code or similar pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Zip_Code or similar json field 
+ Principal  Office:
+   - "a. Initial Street Address of Principal Office - Do not enter a P.O. Box"
+   - "Postal Address"
+   - "Correspondence Address"
+   - "Alternative Address"
+   -"State_2"
+   - "Zip Code_2"
+   - "City no abbreviations_2"
+   - "State"
+   - "Zip Code"
+ 
+
+ORGANIZER INFORMATION:
+   Name Fields:
+   - "Organizer Name"
+   - "Org_Name"
+   - "Organizer.Name"
+   - "Formation Organizer"
+
+   Contact Details:
+   - "Org_Email_Address"
+   - "Org_Contact_No"
+   - "Organizer Phone"
+   - "Organizer Email"
+   -Get the FirstName and Last name from the contact Details json present the first Name can be fetched or obtained at data.contactDetails.firstName json field and the last Name at data.contactDetails.lastName and fill them at right position in the form in pdf.
+
+   Signature Fields:
+   - "Organizer Signature"
+   - "Authorized Signature"
+   - "Execution"
+
+FORM CONTROLS AND BUTTONS:
+   - "Box"
+   - "Reset1"
+   - "Print"
+   - "RadioButton1"
+   - "RadioButton2"
+   - "RadioButton3"
+   - "Clear Form"
+   - "Print Form"
+-If any field likem Limited Liability Company Name is found in the pdf then print the company name or the  entity name in that field . 
+INTELLIGENT MATCHING RULES:
+
+1. PRIORITY MATCHING:
+   Highest Priority:
+   - Company Name (1.0 confidence)
+   - Entity Number/Order ID (1.0 confidence)
+   - Registered Agent Information (0.9-1.0 confidence)
+
+   Secondary Priority:
+   - Address Information (0.8-0.9 confidence)
+   - Organizer Details (0.8-0.9 confidence)
+   - Contact Information (0.7-0.8 confidence)
+
 INPUT DATA:
-JSON Data: {json_data}
-PDF Fields: {pdf_fields}
+JSON Data: {json.dumps(flat_json, indent=2)}
+PDF Fields: {json.dumps(pdf_fields,indent=2)}
 
 MATCHING REQUIREMENTS:
 1. Analyze ALL fields in both JSON and PDF
@@ -139,34 +257,1002 @@ MATCHING GUIDELINES:
 
 Return ALL fields, including those with no matches or empty values.
 """
-FILER_PROMPT= """
-You are an expert system for intelligent PDF form field matching and filling.
-Your task is to directly match flattened JSON data fields to PDF form fields and format the values appropriately.
+FIELD_CONTEXT_ANALYSIS='''
 
-Consider:
-- Field name similarities and variations (ignoring dots in nested field names)
-- Common form field patterns
-- Data type compatibility
-- Value formatting requirements
-- Required vs optional fields
-- Handle None/null values appropriately
+You are an expert in form field interpretation and context extraction. Your task is to analyze PDF form fields and OCR text to extract meaningful contextual information.
 
-For checkboxes:
-- Match them based on field names and values
-- Set to True if the corresponding JSON value matches the checkbox name
-- Set to False otherwise
+Input:
+- A list of PDF form fields with their locations
+- A comprehensive list of OCR text elements extracted from the document
 
-For specific field types:
-- Phone numbers: Format as (XXX) XXX-XXXX if possible
-- Email addresses: Preserve as-is
-- Dates: Convert to MM/DD/YYYY format if possible
-- Numbers: Remove special characters and format appropriately
-- Names: Capitalize first letter of each word
-- Addresses: Keep original formatting
+Objective:
+Provide a detailed, structured analysis that maps contextual information for each form field, focusing on:
+1. Nearby text elements
+2. Potential label or description associations
+3. Semantic relationships between text and fields
+4. Contextual hints that could help in field value prediction
 
-Provide specific, actionable matches with high confidence.
-Explain your reasoning for each match.
+Output Requirements:
+- Return a JSON array of field context objects
+- Each object should contain:
+  - field_name: Original field identifier
+  - page: Page number
+  - nearby_text: Array of most relevant text elements
+  - potential_labels: Possible labels or descriptions
+  - context_hints: Semantic insights about the field
+
+Nearby Text Criteria:
+- Consider spatial proximity (vertical and horizontal)
+- Evaluate semantic relevance
+- Look for text that could be labels, descriptions, or related information
+- Prioritize text that provides meaningful context
+
+Context Extraction Guidelines:
+- Within 100-200 pixels of the field
+- Consider text orientation and reading flow
+- Differentiate between actual labels and irrelevant nearby text
+- Capture text that provides meaningful information about the field's purpose
+
+Example Output Structure:
+```json
+[
+  {{
+    "field_name": "first_name",
+    "page": 1,
+    "nearby_text": [
+      {"text": "First Name", "position": "left", "confidence": 0.95},
+      {"text": "Legal Name Details", "position": "above", "confidence": 0.75}
+    ],
+    "potential_labels": ["First Name", "Given Name"],
+    "context_hints": ["Personal identification section", "Required field"]
+  }}
+]
+```
+
+Important Notes:
+- Be precise and confident in your text selection
+- If no meaningful context is found, return an empty array for that field
+- Ensure the output is valid, parseable JSON
+- Confidence scores help indicate the reliability of context extraction
+'''
+# prompts.py
+
+FIELD_MATCHING_PROMPT2 = '''
+        You are an expert at intelligent form field matching. I need you to match JSON data to PDF form fields.
+
+        JSON DATA:
+        {json_data}
+
+        PDF FIELDS:
+        {pdf_fields}
+
+        YOUR TASK:
+        1. For EVERY PDF field, find the most appropriate JSON field that should fill it
+        2. Consider semantic meaning, not just exact matches
+        3. Assign a value for EVERY field, even if you need to derive it from multiple JSON fields
+        4. For fields with no clear match, suggest a reasonable default value based on available data
+
+        Return your response as a JSON object with a "matches" array containing objects with:
+        - pdf_field: The PDF field name
+        - json_field: The matched JSON field name (or "derived" if combining fields)
+        - confidence: A number from 0 to 1 indicating match confidence
+        - suggested_value: T
+        SPECIAL ATTENTION - COMPANY NAME FIELDS:
+- The JSON data may contain multiple company name fields (e.g., "llc_name", "entity_name")
+- Choose the most appropriate company name value when multiple exist
+- Ensure the company name is matched to the correct PDF field
+- Common PDF field variations include "Limited Liability Company Name", "LLC Name", etc.
+- if their is a substring containing "Limited Liability Company Name" then add the  entity name in that field 
+-ENTITY NUMBER / ORDER ID MAPPING:
+   PDF Field Patterns:
+   - "Entity Number"
+   - "Entity Number if applicable"
+   - "Entity Information"
+   - "Filing Number"
+   - "Registration ID"
+
+   JSON Field Patterns:
+   - "orderId"                    # PRIMARY MATCH FOR ENTITY NUMBER
+   - "orderDetails.orderId"
+   - "data.orderDetails.orderId"
+   - "entityNumber"
+   - "registrationNumber"
+   - Any field ending with "Id" or "Number"
+   
+
+   REGISTERED AGENT INFORMATION: (Highly Required) 
+   Name Address Fields:
+   PDF Patterns:
+   - "Agent Name" 
+   - "California Agent's First Name" 
+   - "Agent" 
+   - "Registered Agent Name" 
+   - "Agent's Name"
+   - "Agent Street Address"
+   - "Agent Physical Address"
+   - "b Street Address (if agent is not a corporation)"
+   - "City no abbreviations_3"
+   - "Zip Code_3"
+   - "Agent State"
+
+   JSON Patterns:
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name" (for full name)
+   - "RA_Address_Line_1" (for street address)
+   - "agent.address" (for address)
+   - "registeredAgent.streetAddress" (for street address)
+   - "Registered_Agent.Address" (for address)
+   - "Get the agent first and Last Name from the data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name split the name in way example if name is 'Corporate Creations Network Inc.' then first name would be 'Corporate' and LastName would be 'Creations Network Inc.'"
+
+   Contact Information:
+   PDF Patterns:
+   - "Agent Phone"
+   - "Agent Email"
+   - "Agent Contact Number"
+
+   JSON Patterns:
+   - "RA_Email_Address" (for email)
+   - "RA_Contact_No" (for contact number)
+   - "agent.contactDetails" (for contact details)
+
+   
+  PRINCIPAL ADDRESS (MANDATORY FIELD):
+   Address Fields:
+   PDF Patterns:
+   -  "Initial Street Address of Principal Office - Do not enter a P" → MUST be mapped to a Principal Address field in JSON "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1".
+   
+   - "Postal Address"
+   - "Correspondence Address"
+   - "Alternative Address"
+   - "City no abbreviations_2"
+   - "State"
+   - "Zip Code"
+
+   JSON Patterns:
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1" (for Initial Street Address)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_2" (for Address Line 2)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_City" (for City)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_State" (for State)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Zip_Code" (for Zip Code)
+
+
+
+ORGANIZER or Incorporator INFORMATION:
+   Name Fields:
+   - "Organizer Name"
+   - "Org_Name"
+   - "Organizer.Name"
+   - "Formation Organizer"
+   - "Incorporator Name"
+   - "Inc_Name"
+   - "Incorporator.Name"
+   - "Formation Incorporator"
+
+   Contact Details:
+   - "Org_Email_Address"
+   - "Org_Contact_No"
+   - "Organizer Phone"
+   - "Organizer Email"
+   - "Inc_Email_Address"
+   - "Inc_Contact_No"
+   - "Incorporator Phone"
+   - "Incorporator Email"
+   -Get the FirstName and Last name from the contact Details json present the first Name can be fetched or obtained at data.contactDetails.firstName json field and the last Name at data.contactDetails.lastName and fill them at right position in the form in pdf.
+
+   Signature Fields:
+   - "Organizer Signature"
+   - "Authorized Signature"
+   - "Execution"
+
+FORM CONTROLS AND BUTTONS:
+   - "Box"
+   - "Reset1"
+   - "Print"
+   - "RadioButton1"
+   - "RadioButton2"
+   - "RadioButton3"
+   - "Clear Form"
+   - "Print Form"
+        
+        
+        he actual value to fill in the PDF field
+        - field_type: The type of field (text, checkbox, etc.)
+        - editable: Whether the field is editable
+        - reasoning: Brief explanation of why this match was made
+
+        IMPORTANT: Every PDF field must have a suggested value, even if you need to derive one.
+        '''
+PDF_FIELD_MATCHING_PROMPT = """
+Match the following JSON fields to PDF form fields.
+ENTITY NAME FIELDS (MANDATORY):
+- If "Entity Name" or "LLC Name" appears in multiple places in the PDF, ensure that the same entity name is used in each and filled the pdf .
+
+- The JSON data may contain multiple entity name fields, e.g., "entity_name", "llc_name".
+- Common PDF field names for entity name include:
+  - "Entity Information - Name"
+  - "1. Limited Liability Company Name"
+  -"LImited Liability Company"
+  - "LLC Name"
+  - "Business Name"
+  - "Company Name"
+- Use the most appropriate entity name value and ensure it appears consistently.
+
+Mailing Address Group (MANDATORY):
+   PDF Field Patterns:
+   - Main Address: "b. Initial Mailing Address ", "Mailing Address of LLC"
+   - City: Field containing "City" near mailing address
+   - State: Field containing "State" near mailing address
+   - ZIP: Field containing "Zip" or "Zip Code" near mailing address
+   
+   JSON Field Patterns:
+   - Address: "Mailing_Address.MA_Address_Line_1", "Entity_Formation.Mailing_Address.MA_Address_Line_1"
+   - City: "Mailing_Address.MA_City", "Entity_Formation.Mailing_Address.MA_City"
+   - State: "Mailing_Address.MA_State", "Entity_Formation.Mailing_Address.MA_State"
+   - ZIP: "Mailing_Address.MA_Zip_Code", "Entity_Formation.Mailing_Address.MA_Zip_Code"
+
+
+ENTITY NUMBER / ORDER ID MAPPING(MANDATORY) :
+
+    PDF Field Patterns:
+    - "Entity Number"
+    - "Entity Number if applicable"
+    - "Entity Information"
+    - "Filing Number"
+    - "Registration ID"
+
+    JSON Field Patterns:
+    - "orderId"                    # PRIMARY MATCH FOR ENTITY NUMBER
+    - "orderDetails.orderId"
+    - "data.orderDetails.orderId"
+    - "entityNumber"
+    - "registrationNumber"
+    - Any field ending with "Id" or "Number"
+      REGISTERED AGENT INFORMATION (HIGHLY REQUIRED):
+- Ensure the AI agent correctly fills the Registered Agent fields, even if names are slightly different.
+- Match agent names using:
+  - "California Agent's First Name"
+  - "California Agent's Last Name"
+  - "Registered Agent Name"
+  - "Agent's Name"
+  - "Agent Street Address"
+  - "Agent Physical Address"
+  - "b Street Address (if agent is not a corporation)"
+- Prioritize JSON fields:
+  - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name"
+  - "RA_Address_Line_1"
+  - "registeredAgent.streetAddress"
+  - "Registered_Agent.Address"
+
+  :
+- "Organizer Name"
+- "Authorized Signature"
+- "Execution"
+-If the form ask for "Signature" or "Organizer Sign"  then add the Organizer name from the json value "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name"
+- If an agent's name is provided as a full name string, split it into first and last names  example if agent name is CC tech Filings then first name is "CC" and last Name would be "tech Filings".
+-1. ADDRESSES:
+       - Distinguish between different address types (mailing, physical, agent, principal office)
+       - Correctly match address components (street, city, state, zip) to corresponding JSON fields
+       - If a field contains "mailing" or is labeled as a mailing address, prioritize JSON fields with "mail"
+       - If a field contains "principal" or "physical", prioritize JSON fields with those terms
+    
+
+JSON Data:
+{json_data}
+
+PDF Fields:
+{pdf_fields}
+
+Respond with a valid JSON in this format:
+{{
+    "matches": [
+        {{
+            "json_field": "<JSON key>",
+            "pdf_field": "<PDF field name>",
+            "confidence": 0.95,
+            "suggested_value": "<value to fill>",
+            "reasoning": "Matched based on..."
+        }}
+    ]
+}}
 """
+
+PDF_FIELD_MATCHING_PROMPT1 = """
+Match the following JSON fields to PDF form fields.
+I need to fill a PDF form with data from a JSON object. Match JSON fields to the appropriate PDF form fields or OCR-detected text areas based on keyword similarity, even if spelling errors exist. Fill them in a single process.
+ENTITY NAME FIELDS (MANDATORY):
+- If "Entity Name" or "LLC Name" appears in multiple places in the PDF, ensure that the same entity name is used in each and filled in the PDF.
+
+- The JSON data may contain multiple entity name fields, e.g., "entity_name", "llc_name".
+- Common PDF field names for entity name include:
+  - "Entity Information - Name"
+  - "1. Limited Liability Company Name"
+  - "Limited Liability Company"
+  - "LLC Name"
+  - "Business Name"
+  - "Company Name"
+- Use the most appropriate entity name value and ensure it appears consistently.
+
+Mailing Address Group (MANDATORY):
+   PDF Field Patterns:
+   - Main Address: "b. Initial Mailing Address ", "Mailing Address of LLC"
+   - City: Field containing "City" near mailing address
+   - State: Field containing "State" near mailing address
+   - ZIP: Field containing "Zip" or "Zip Code" near mailing address
+
+   JSON Field Patterns:
+   - Address: "Mailing_Address.MA_Address_Line_1", "Entity_Formation.Mailing_Address.MA_Address_Line_1"
+   - City: "Mailing_Address.MA_City", "Entity_Formation.Mailing_Address.MA_City"
+   - State: "Mailing_Address.MA_State", "Entity_Formation.Mailing_Address.MA_State"
+   - ZIP: "Mailing_Address.MA_Zip_Code", "Entity_Formation.Mailing_Address.MA_Zip_Code"
+
+ENTITY NUMBER / ORDER ID MAPPING (MANDATORY):
+
+    PDF Field Patterns:
+    - "Entity Number"
+    - "Entity Number if applicable"
+    - "Entity Information"
+    - "Filing Number"
+    - "Registration ID"
+
+    JSON Field Patterns:
+    - "orderId"                    # PRIMARY MATCH FOR ENTITY NUMBER
+    - "orderDetails.orderId"
+    - "data.orderDetails.orderId"
+    - "entityNumber"
+    - "registrationNumber"
+    - Any field ending with "Id" or "Number"
+
+REGISTERED AGENT INFORMATION (MANDATORY):
+- Ensure the AI agent correctly fills the Registered Agent fields, even if names are slightly different.
+- Match agent names using:
+  - "California Agent's First Name"
+  - "California Agent's Last Name"
+  - "Registered Agent Name"
+  - "Agent's Name"
+  - "Agent Street Address"
+  - "Agent Physical Address"
+  - "b Street Address (if agent is not a corporation)"
+- Prioritize JSON fields:
+  - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name"
+  - "RA_Address_Line_1"
+  - "registeredAgent.streetAddress"
+  - "Registered_Agent.Address"
+
+SIGNATURE & ORGANIZER INFORMATION:
+- Match the following fields:
+  - "Organizer Name"
+  - "Authorized Signature"
+  - "Execution"
+- If the form asks for "Signature" or "Organizer Sign," then add the organizer name from the JSON value:
+  - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name"
+- If an agent's name is provided as a full name string, split it into first and last names.  
+  Example: If agent name is "CC Tech Filings," then first name is **"CC"** and last name is **"Tech Filings"**.
+
+ADDRESSES:
+- Distinguish between different address types (mailing, physical, agent, principal office).
+- Correctly match address components (street, city, state, zip) to corresponding JSON fields.
+- If a field contains "mailing" or is labeled as a mailing address, prioritize JSON fields with "mail".
+- If a field contains "principal" or "physical," prioritize JSON fields with those terms.
+
+### **NEWLY ADDED FIELDS TO BE FILLED IN PDF:**
+
+BUSINESS PURPOSE FIELD:
+- Ensure that the business purpose section is correctly populated from:
+  - JSON Field: `"orderDetails.strapiOrderFormJson.Entity_Formation.Business_Purpose"`
+- Common PDF Field Names:
+  - "Purpose of Business"
+  - "Business Purpose"
+  - "Nature of Business"
+- If the business purpose is missing, default to: **"General Business Activities"**.
+
+MEMBER/MANAGER SELECTION (MANDATORY):
+- Identify if the LLC will be **Member-Managed** or **Manager-Managed**.
+- Match JSON Field:
+  - `"orderDetails.strapiOrderFormJson.Entity_Formation.Management_Type"`
+- Common PDF Field Names:
+  - "LLC Managed By"
+  - "Management Structure"
+  - "The LLC will be managed by:"
+- Set values as:
+  - `"One Manager"` → Manager-Managed
+  - `"More than One Manager"` → Multiple Managers
+  - `"All LLC Member(s)"` → Member-Managed
+
+EMAIL CONTACT (OPTIONAL BUT IMPORTANT):
+- Match JSON Field:
+  - `"contactDetails.emailId"`
+- Common PDF Field Names:
+  - "Contact Email"
+  - "Business Email"
+  - "Registered Email Address"
+
+FILING FEE & TAX INFORMATION (IF REQUIRED):
+- If the form includes a **Filing Fee** section, ensure the amount is populated.
+- Match JSON Field:
+  - `"orderDetails.orderAmount"`
+- Common PDF Field Names:
+  - "Filing Fee"
+  - "Total Payment"
+  - "Amount Paid"
+
+ADDITIONAL NOTES & COMPLIANCE STATEMENTS:
+- If the form requires **additional notes or compliance agreements**, populate them from:
+  - `"orderDetails.strapiOrderFormJson.Entity_Formation.Compliance_Notes"`
+- Common PDF Field Names:
+  - "Additional Notes"
+  - "Compliance Statement"
+  - "Regulatory Agreement"
+- If missing, use: **"LLC agrees to comply with all state regulations and filing requirements."**
+
+JSON Data:
+{json_data}
+
+PDF Fields:
+{pdf_fields}
+
+Respond with a valid JSON in this format:
+{{
+    "matches": [
+        {{
+            "json_field": "<JSON key>",
+            "pdf_field": "<PDF field name>",
+            "confidence": 0.95,
+            "suggested_value": "<value to fill>",
+            "reasoning": "Matched based on..."
+        }}
+    ]
+}}
+"""
+PDF_FIELD_MATCHING_PROMPT2="""
+I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF form fields based on semantic similarity, not just exact string matches.
+    
+    IMPORTANT INSTRUCTIONS:
+    1. For each PDF field, find the most relevant JSON field, even if names are different.
+    2. Consider field context (nearby text in the PDF) to understand the purpose of each field.
+    3. For name fields, match to company name or individual name appropriately.
+    4. Registered agent name and address fields need to be accurately filled.
+    5. For address fields, properly distribute address components (street, city, state, zip).
+    6. Pay special attention to UUIDs in the form - these need to be matched based on context.
+    7. Create matches for ALL PDF fields if possible - aim for 100% coverage.
+    8. Be particularly careful with matching text from OCR with the corresponding PDF fields.
+    
+    ENTITY NAME FIELDS (MANDATORY):
+    - If "Entity Name" or "LLC Name" appears in multiple places in the PDF, ensure that the same entity name is used consistently.
+    - The JSON data may contain multiple entity name fields, e.g., "entity_name", "llc_name","Corporation Name ,"Corp_Name, "Corporation_Name".
+    - Common PDF field names for entity name include:
+      - "Entity Information - Name"
+      - "1. Limited Liability Company Name"
+      - "Limited Liability Company"
+      - "LLC Name"
+      -"Corporation"
+      -"Corp" 
+      -"Incorporation Name" 
+      
+      - "Business Name"
+      - "Company Name"
+    
+    MAILING ADDRESS GROUP (MANDATORY):
+    - PDF Field Patterns:
+      - "b. Initial Mailing Address ", "Mailing Address of LLC"
+      - City fields near "Mailing Address"
+      - State fields near "Mailing Address"
+      - ZIP fields near "Mailing Address"
+    - JSON Field Patterns:
+      - Address: "Mailing_Address.MA_Address_Line_1"
+      - City: "Mailing_Address.MA_City"
+      - State: "Mailing_Address.MA_State"
+      - ZIP: "Mailing_Address.MA_Zip_Code"
+    
+    ENTITY NUMBER / ORDER ID MAPPING (MANDATORY):
+    - PDF Field Patterns:
+      - "Entity Number", "Filing Number", "Registration ID"
+    - JSON Field Patterns:
+      - "orderId", "registrationNumber", any field ending with "Id" or "Number"
+    
+    REGISTERED AGENT INFORMATION (MANDATORY):
+     REGISTERED AGENT fields should be filled with registered agent data (like registeredAgent.name)
+    - Match agent names using:
+      - "Registered Agent Name", "Agent's Name", "Agent Street Address","Register Agent Name","Register Agent" ,"Registered Agent".
+      "Initial Registered Agent"
+    - Prioritize JSON fields:
+      - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name", "RA_Address_Line_1"
+    
+    SIGNATURE & ORGANIZER INFORMATION:
+    - Match the following fields:
+      - "Organizer Name", "Authorized Signature"
+      - JSON field: "Organizer_Information.Org_Name"
+    
+    ADDRESSES:
+    - Distinguish between different address types (mailing, physical, agent, principal office).
+    - Correctly match address components (street, city, state, zip) to corresponding JSON fields.
+    
+    BUSINESS PURPOSE FIELD:
+    - Ensure that the business purpose section is correctly populated from JSON field:
+      - "Business_Purpose"
+    - Default value: "General Business Activities" if missing.
+    
+    MEMBER/MANAGER SELECTION (MANDATORY):
+    - Identify if the LLC is Member-Managed or Manager-Managed.
+    - JSON Field: "Management_Type"
+    - Set values:
+      - "One Manager" → Manager-Managed
+      - "More than One Manager" → Multiple Managers
+      - "All LLC Member(s)" → Member-Managed
+    
+    EMAIL CONTACT (OPTIONAL BUT IMPORTANT):
+    - JSON Field: "contactDetails.emailId"
+    
+    FILING FEE & TAX INFORMATION (IF REQUIRED):
+    - JSON Field: "orderDetails.orderAmount"
+    
+    ADDITIONAL NOTES & COMPLIANCE STATEMENTS:
+    - Populate from JSON: "Compliance_Notes"
+    - Default value: "LLC agrees to comply with all state regulations and filing requirements."
+    
+    JSON DATA:
+    {json_data}
+    
+    PDF FORM FIELDS (with UUIDs):
+    {pdf_fields}
+    
+    OCR TEXT ELEMENTS:
+    {ocr_elements}
+    
+    FIELD CONTEXT (NEARBY TEXT):
+    {field_context}
+    
+    Respond with a valid JSON in this format:
+    {{
+        "matches": [
+            {{
+                "json_field": "<JSON key>",
+                "pdf_field": "<PDF field name>",
+                "confidence": 0.95,
+                "suggested_value": "<value to fill>",
+                "reasoning": "Matched based on..."
+            }}
+        ],
+        "ocr_matches": [
+
+    {{
+
+      "json_field": "field.name.in.json",
+
+      "ocr_text": "Extracted text from OCR",
+
+      "pdf_field": "uuid_of_pdf_field",
+
+      "confidence": 0.8,
+
+      "suggested_value": "Value to annotate",
+
+      "reasoning": "Why this OCR text matches this field"
+
+    }}
+
+  ]
+
+}}
+    }}
+    """
+
+
+
+FIELD_MATCHING_PROMPT_UPDATED =  """
+        I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF form fields based on semantic similarity, not just exact string matches.
+
+        IMPORTANT INSTRUCTIONS:
+        1. For each PDF field, find the most relevant JSON field, even if names are different.
+        2. Consider field context (nearby text in the PDF) to understand the purpose of each field
+        
+        3. Registered agent name and address fields need to be accurately filled for registered agent name get  the value for the name in pdf fields it is present as  "Commercial Registered Agent" or similar at  "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name" and fill in the pdf field "initial regisered agent" or "registered agent" for registered agent accurately using this value only.
+        4. ENTITY NAME FIELDS (MANDATORY):
+    - If "Entity Name" or "LLC name" or "limited liability company" or similar  appears in multiple places in the PDF, ensure that the same entity name is used consistently enter the company name only if the field has the label "entity name or relevant".
+    - The JSON data may contain multiple "entity name" fields, e.g., "entity_name", "llc_name","Corporation Name ,"Corp_Name, "Corporation_Name".
+    - Common PDF field names for entity name include:
+      - "Entity Information - Name"
+      - "1. Limited Liability Company Name"
+      - "Limited Liability Company"
+      - "LLC Name"
+      -"Corporation"
+      -"Corp" 
+      -"Incorporation Name" 
+      
+      - "Business Name"
+      - "Company Name"
+        5.PRINCIPAL ADDRESS (MANDATORY FIELD):
+   Address Fields:
+   PDF Patterns:
+   -  "Initial Street Address of Principal Office - Do not enter a P" → MUST be mapped to a Principal Address field in JSON "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1".
+   
+   - "Postal Address"
+   - "Correspondence Address"
+   - "Alternative Address"
+   - "City no abbreviations_2"
+   - "State"
+   - "Zip Code"
+
+   JSON Patterns:
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1" (for Initial Street Address)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_2" (for Address Line 2)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_City" (for City)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_State" (for State)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Zip_Code" (for Zip Code)
+        6.  Organizer Details:
+   - "Org_Email_Address"
+   - "Org_Contact_No"
+   - "Organizer Phone"
+   - "Organizer Email"
+   -"Organizer Name" 
+   JSON Patterns:
+   - get the organizer name from  "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name" value in the Organizer Signature Field or Signature along with the organizer name field or Similar .
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Address.Org_Address_Line1 or similar"_Line_1 (for Address Line 2)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Organizer_Email or similar" (for City)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Address.Org_State or Similar" (for State)
+   - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Address.Org_Zip_Code" (for Zip Code)
+   
+   - "Inc_Email_Address"
+   - "Inc_Contact_No"
+   - "Incorporator Phone"
+   - "Incorporator Email"
+           6. If the code as for business purpose then fill it accurately by selecting the business purpose field from json .
+           7.SIGNATURE & ORGANIZER INFORMATION:
+    - Match the following fields:
+      - "Organizer Name", "Authorized Signature"
+      - JSON field: "Organizer_Information.Org_Name"
+         8. Pay special attention to UUIDs in the form - these need to be matched based on context.
+        9. For phone number or contact information fetch the relevant value from the json 
+        10. Create matches for ALL PDF fields if possible - aim for 100% coverage.
+        11. Be particularly careful with matching text from OCR with the corresponding PDF fields.
+        12. Use the "likely_purpose" keywords to help determine what each field is for.
+        13.Also match the fields semantically accurate as their might be spelling errors in the keywords.
+        14. IMPORTANT: Pay special attention to fields related to "registered agent", "agent name", or similar terms. These fields are critical for legal forms and must be filled correctly. Look for fields with these terms in their name or nearby text.
+        15. Select the relevant checkbox if present if required based on json.
+        16. EMAIL CONTACT (OPTIONAL BUT IMPORTANT):
+        17. If the pdf asked for the name then enter the value from Get the FirstName and Last name from the contact details JSON field: "data.contactDetails.firstName" and "data.contactDetails.lastName".
+    - JSON Field: "contactDetails.emailId"
+        JSON DATA:
+        {json_data}
+
+        PDF FORM FIELDS (with UUIDs):
+        {pdf_fields}
+
+        OCR TEXT ELEMENTS:
+        {ocr_elements}
+
+        FIELD CONTEXT (NEARBY TEXT):
+        {field_context}
+
+        Return results in this format:
+        {{
+          "matches": [
+            {{
+              "json_field": "field.name.in.json",
+              "pdf_field": "uuid_of_pdf_field",
+              "confidence": 0.9,
+              "suggested_value": "Value to fill",
+              "reasoning": "Why this field was matched"
+            }}
+          ],
+          "ocr_matches": [
+            {{
+              "json_field": "field.name.in.json",
+              "ocr_text": "Extracted text from OCR",
+              "pdf_field": "uuid_of_pdf_field",
+              "confidence": 0.8,
+              "suggested_value": "Value to annotate",
+              "reasoning": "Why this OCR text matches this field"
+            }}
+          ]
+        }}
+        """
+
+MISTRAL_API_KEY= "7NZvr1Bugz4jpKuWks11jX9jMDCbkv3G"
+FIELD_MATCHING_PROMPT3 = '''
+        You are an expert at intelligent form field matching. I need you to match JSON data to PDF form fields.
+
+        JSON DATA:
+        {json_data}
+
+        PDF FIELDS:
+        {pdf_fields}
+
+        YOUR TASK:
+        1. For EVERY PDF field, find the most appropriate JSON field that should fill it
+        2. Prioritize exact matches first, but also consider semantic meaning, abbreviations, and truncations.
+        3. Assign a value for EVERY field, even if you need to derive it from multiple JSON fields
+        4. For fields with no clear match, suggest a reasonable default value based on available data
+        5.Perform regex-based fuzzy matching to detect relevant fields even if they are named differently in JSON.
+        6. Ensure that all required fields (e.g., Principal Office Address, Registered Agent) are filled.
+        7. If the field is detected but remains empty, force assign the extracted value
+        8.Ensure strict enforcement of field population for mandatory fields, even if confidence is low.
+        9. If a field appears truncated in the extracted PDF fields, compare against the full field name and always use the complete version before considering a truncated match 
+    10. Extract full PDF field names accurately. If a field appears truncated (e.g., missing prefixes like "a." or "b."), match it against the full list of extracted fields before making a decision. 
+    EGISTERED AGENT FIELDS (HIGHEST PRIORITY)
+
+Agent Name: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name
+PDF field patterns: "initial registered agent", "registered agent", "agent name"
+Include agent address using the appropriate JSON fields under Registered_Agent
+
+PRINCIPAL ADDRESS (MANDATORY)
+
+Address Line 1: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1
+Address Line 2: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_2
+City: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_City
+State: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_State
+Zip: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Zip_Code
+PDF patterns: "Principal Office", "Initial Street Address", "Main Address"
+
+ORGANIZER INFORMATION
+
+Organizer Name: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name
+Email: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Email_Address
+Phone: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Contact_No
+Address: Fields under Organizer_Information.Organizer_Address.*
+Use name for signature fields too
+
+BUSINESS PURPOSE
+
+Use exact text from JSON field related to business purpose
+Handle checkbox selections based on JSON values
+
+FIELD TYPE HANDLING
+CHECKBOXES
+
+For boolean PDF fields, convert string values:
+
+"true", "yes", "on", "1" → TRUE
+"false", "no", "off", "0" → FALSE
+
+
+Look for JSON boolean fields or text indicating preferences
+
+DATE FIELDS
+
+Format dates consistently: MM/DD/YYYY
+If the PDF has separate month/day/year fields, split accordingly
+
+OCR FIELD POSITIONING
+
+For OCR text matches, include precise position data (x1, y1, x2, y2)
+Place annotations adjacent to but not overlapping the original text
+
+       SPECIAL ATTENTION - FIELD NAME TRUNCATION:
+        Return your response as a JSON object with a "matches" array containing objects with:
+        - pdf_field: The PDF field name
+        - json_field: The matched JSON field name (or "derived" if combining fields)
+        - confidence: A number from 0 to 1 indicating match confidence
+        - suggested_value: The actual value to fill in the PDF field
+        - field_type: The type of field (text, checkbox, etc.)
+        - editable: Whether the field is editable
+        - reasoning: Brief explanation of why this match was made
+
+        SPECIAL ATTENTION - COMPANY NAME FIELDS:
+        - The JSON data may contain multiple company name fields (e.g., "llc_name", "entity_name")
+        - Choose the most appropriate company name value when multiple exist
+        - Ensure the company name is matched to the correct PDF field
+        - Common PDF field variations include "Limited Liability Company Name", "LLC Name", etc.
+
+        ENTITY NUMBER / ORDER ID MAPPING:
+        PDF Field Patterns:
+        - "Entity Number"
+        - "Entity Number if applicable"
+        - "Entity Information"
+        - "Filing Number"
+        - "Registration ID"
+
+        JSON Field Patterns:
+        - "orderId"                    # PRIMARY MATCH FOR ENTITY NUMBER
+        - "orderDetails.orderId"
+        - "data.orderDetails.orderId"
+        - "entityNumber"
+        - "registrationNumber"
+        - Any field ending with "Id" or "Number"
+
+        REGISTERED AGENT INFORMATION (HIGHLY REQUIRED):
+    - Ensure the AI agent correctly fills the Registered Agent fields, even if names are slightly different.
+    - Match agent names using:
+      - "California Agent's First Name"
+      - "California Agent's Last Name"
+      - "Registered Agent Name"
+      - "Agent's Name"
+      - "Agent Street Address"
+      - "Agent Physical Address"
+      - "b Street Address (if agent is not a corporation)"
+    - Prioritize JSON fields:
+      - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name"
+      - "RA_Address_Line_1"
+      - "registeredAgent.streetAddress"
+      - "Registered_Agent.Address"
+    - If an agent's name is provided as a full name string, split it into first and last names as needed.
+    - If the field is detected but remains empty, force assign the extracted value and log the issue.
+    
+    DEBUGGING AND VALIDATION:
+    - Log any fields that remain unfilled after processing.
+    - Ensure the AI agent provides a summary of unmatched fields and suggests corrections.
+    - Cross-check all assigned values to confirm they align with expected data.
+    
+        Contact Information:
+        PDF Patterns:
+        - "Agent Phone"
+        - "Agent Email"
+        - "Agent Contact Number"
+
+        JSON Patterns:
+        - "RA_Email_Address" (for email)
+        - "RA_Contact_No" (for contact number)
+        - "agent.contactDetails" (for contact details)
+
+        SPECIAL ATTENTION - FIELD NAME TRUNCATION:
+    
+    - If no full match is found, use regex-based similarity matching.
+    - Ensure prefixes (e.g., "a. ", "b. ") do not cause mismatches.
+
+   PRINCIPAL ADDRESS (MANDATORY FIELD):
+    - Ensure "a. Initial Street Address of Principal Office - Do not enter a P.O. Box" is correctly matched.
+    - If an exact match is not found, fallback to these:
+      - "Initial Street Address of Principal Office"
+      - "Principal Office Address"
+      - "Business Address"
+      
+      - "Physical Address"
+    - Use fuzzy matching to detect variations of the address field name.
+    - If no direct match exists, derive an address from multiple related fields.
+    - If the field is detected but remains empty after filling, **force assign the extracted value** and log it for debugging.
+        JSON Patterns:
+        - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1" (for Initial Street Address)
+        - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_2" (for Address Line 2)
+        - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_City" (for City)
+        - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_State" (for State)
+        - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Zip_Code" (for Zip Code)
+        - If no direct match exists, derive an address from multiple related fields (e.g., general company address fields).
+
+        ORGANIZER INFORMATION:
+        Name Fields:
+        - "Organizer Name"
+        - "Org_Name"
+        - "Organizer.Name"
+        - "Formation Organizer"
+
+        Contact Details:
+        - "Org_Email_Address"
+        - "Org_Contact_No"
+        - "Organizer Phone"
+        - "Organizer Email"
+        - Get the FirstName and Last name from the contact details JSON field: "data.contactDetails.firstName" and "data.contactDetails.lastName".
+
+        Signature Fields:
+        - "Organizer Signature"
+        - "Authorized Signature"
+        - "Execution"
+
+        FORM CONTROLS AND BUTTONS:
+        - "Box"
+        - "Reset1"
+        - "Print"
+        - "RadioButton1"
+        - "RadioButton2"
+        - "RadioButton3"
+        - "Clear Form"
+        - "Print Form"
+
+        IMPORTANT: Every PDF field must have a suggested value, even if you need to derive one.
+'''
+
+
+FIELD_MATCHING_PROMPT_UPDATED1='''
+PDF Form Field Mapping Instructions
+I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF form fields based on semantic similarity, not just exact string matches.
+CRITICAL MAPPING RULES (ALl the fields are critical) 
+
+For each PDF field, find the most relevant JSON field, even if names differ
+Consider field context (nearby text in the PDF) to understand field purpose
+When multiple matches exist, prioritize:
+
+Semantic relevance over keyword matching
+Field type compatibility (text to text, numbers to numbers)
+Context from nearby OCR text
+
+
+
+MANDATORY FIELD MAPPINGS
+ENTITY NAME FIELDS (HIGHEST PRIORITY)
+
+If "Entity Name" or  "limited liability company name" or  similar appears multiple times, use consistent values
+JSON path: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name
+PDF field patterns to look for:
+
+"Entity Information - Name"
+"Limited Liability Company Name"
+'limited liability company"
+"LLC Name"
+"Corporation"/"Corp"
+"Incorporation Name"
+"Business Name"
+"Company Name"
+"limited liability company " or semantic perform the semantic mapping if you see company name then fill the above json value for the entity name. 
+
+
+
+REGISTERED AGENT FIELDS (HIGHEST PRIORITY)
+
+Agent Name: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name
+PDF field patterns: "initial registered agent", "registered agent", "agent name"
+Include agent address using the appropriate JSON fields under Registered_Agent
+
+PRINCIPAL ADDRESS (MANDATORY)
+
+Address Line 1: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1
+Address Line 2: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_2
+City: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_City
+State: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_State
+Zip: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Zip_Code
+PDF patterns: "Principal Office", "Initial Street Address", "Main Address"
+
+ORGANIZER INFORMATION
+
+Organizer Name: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name
+Email: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Email_Address
+Phone: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Contact_No
+Address: Fields under Organizer_Information.Organizer_Address.*
+Use name for signature fields too
+
+BUSINESS PURPOSE
+
+Use exact text from JSON field related to business purpose
+Handle checkbox selections based on JSON values
+
+FIELD TYPE HANDLING
+CHECKBOXES
+
+For boolean PDF fields, convert string values:
+
+"true", "yes", "on", "1" → TRUE
+"false", "no", "off", "0" → FALSE
+
+
+Look for JSON boolean fields or text indicating preferences
+
+DATE FIELDS
+
+Format dates consistently: MM/DD/YYYY
+If the PDF has separate month/day/year fields, split accordingly
+
+OCR FIELD POSITIONING
+
+For OCR text matches, include precise position data (x1, y1, x2, y2)
+Place annotations adjacent to but not overlapping the original text
+
+RESPONSE FORMAT
+Return results in this precise format:
+{{
+  "matches": [
+    {{
+      "json_field": "field.name.in.json",
+      "pdf_field": "uuid_of_pdf_field",
+      "confidence": 0.9,
+      "suggested_value": "Value to fill",
+      "reasoning": "Detailed explanation of why this mapping is correct"
+    }}
+  ],
+  "ocr_matches": [
+    {{
+      "json_field": "field.name.in.json",
+      "ocr_text": "Extracted text from OCR",
+      "page_num": 1,
+      "x1": 100.0,
+      "y1": 200.0,
+      "x2": 300.0,
+      "y2": 220.0,
+      "confidence": 0.8,
+      "suggested_value": "Value to annotate",
+      "reasoning": "Explanation of OCR text match with positioning details"
+    }}
+  ]
+}}
+Aim for 100% field coverage with high-confidence mappings. Document any uncertain matches with lower confidence scores and detailed reasoning.
+
+
+'''
 
 SYSTEM_PROMPT_MATCHER = """
         You are an expert recruiter AI. Your goal is to autonomously analyze resumes and job descriptions.
