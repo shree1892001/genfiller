@@ -3,7 +3,7 @@ import json
 import os
 import re
 import shutil
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 import fitz
 import numpy as np
@@ -37,7 +37,7 @@ class NumpyEncoder(json.JSONEncoder):
 
 class FieldMatch(BaseModel):
     json_field: str
-    pdf_field: str
+    pdf_field: str  # or = None if you update the validator
     confidence: float
     suggested_value: Any
     reasoning: str
@@ -58,7 +58,8 @@ class OCRFieldMatch(BaseModel):
     x2: float
     y2: float
     confidence: float
-    pdf_field:str
+    pdf_field: str  # or = None if you update the validator
+
     suggested_value: Any
     reasoning: str
 
@@ -198,7 +199,7 @@ class MultiAgentFormFiller:
         for key in flat_json.keys():
             print(f" - {key}: {flat_json[key]}")
 
-        prompt = FIELD_MATCHING_PROMPT_UPDATED.format(
+        prompt = FIELD_MATCHING_PROMPT_UPDATED3.format(
             json_data=json.dumps(flat_json, indent=2, cls=NumpyEncoder),
             pdf_fields=json.dumps([{"uuid": k, "info": v} for k, v in pdf_fields.items()], indent=2, cls=NumpyEncoder),
             ocr_elements=json.dumps(ocr_text_elements, indent=2, cls=NumpyEncoder),
@@ -584,7 +585,6 @@ class MultiAgentFormFiller:
                 words_in_search = set(search_text.split())
                 words_in_element = set(element_text.split())
                 common_words = words_in_search.intersection(words_in_element)
-
                 if common_words:
                     word_ratio = len(common_words) / max(len(words_in_search), 1)
                     if word_ratio > 0.5 and word_ratio > best_ratio:
@@ -656,13 +656,11 @@ class MultiAgentFormFiller:
             else:
                 items[new_key] = value
         return items
-
-
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\WisconsinLLC.pdf"
+    template_pdf = "D:\\demo\\Services\\Maine.pdf"
     json_path = "D:\\demo\\Services\\form_data.json"
-    output_pdf = "D:\\demo\\Services\\fill_smart5.pdf"
+    output_pdf = "D:\\demo\\Services\\fill_smart8.pdf"
 
     with open(json_path, "r", encoding="utf-8") as f:
         json_data = json.load(f)

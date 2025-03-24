@@ -3,21 +3,27 @@ import json
 import os
 import re
 import shutil
-from typing import Dict, Any, List, Tuple
+import time
+import logging
+from typing import Dict, Any, List, Tuple, Optional
 
 import fitz
 import numpy as np
 import cv2
-import easyocr
+from paddleocr import PaddleOCR
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import DictionaryObject, NameObject, BooleanObject, ArrayObject
 from difflib import SequenceMatcher
 
 from pydantic_ai import Agent
 from pydantic_ai.models.gemini import GeminiModel
+import google.generativeai as genai
 from pydantic import BaseModel, field_validator
 
 from Common.constants import *
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 API_KEYS = {
     "field_matcher": API_KEY_3,
@@ -37,10 +43,11 @@ class NumpyEncoder(json.JSONEncoder):
 
 class FieldMatch(BaseModel):
     json_field: str
-    pdf_field: str
+    pdf_field: str  # or = None if you update the validator
     confidence: float
     suggested_value: Any
     reasoning: str
+    is_checkbox: bool = False  # Added flag to identify checkboxes
 
     @field_validator("confidence")
     def validate_confidence(cls, v):
@@ -58,8 +65,10 @@ class OCRFieldMatch(BaseModel):
     x2: float
     y2: float
     confidence: float
+    pdf_field: str  # or = None if you update the validator
     suggested_value: Any
     reasoning: str
+    is_checkbox: bool = False  # Added flag to identify checkboxes
 
     @field_validator("confidence")
     def validate_confidence(cls, v):
@@ -75,42 +84,184 @@ class MultiAgentFormFiller:
             system_prompt="You are an expert at mapping PDF fields to JSON keys and filling them immediately."
         )
 
-        self.ocr_reader = easyocr.Reader(['en'])
+        self.checkbox_agent = Agent(
+            model=GeminiModel("gemini-1.5-flash", api_key=API_KEYS["field_matcher"]),
+            system_prompt="You are an expert at identifying checkbox fields in forms and determining if they should be checked based on user data."
+        )
 
+        self.ocr_reader = PaddleOCR(use_angle_cls=True, lang='en')
         self.matched_fields = {}
-        # Add a new attribute for direct OCR to JSON matching
-        self.ocr_json_matches = {}
+        self.model_name = "gemini-1.5-pro"  # Model for the extract_labels feature
+        self.max_retries = 3  # Maximum number of retries for API calls
+
+    def _get_page_image(self, page):
+        """Convert a PDF page to an image for Gemini processing."""
+        pix = page.get_pixmap(alpha=False)
+        img_data = pix.tobytes("png")
+        return img_data
 
     async def extract_pdf_fields(self, pdf_path: str) -> Dict[str, Dict[str, Any]]:
-        """Extracts all fillable fields from a multi-page PDF with additional metadata."""
-        print("🔍 Extracting all fillable fields...")
-        doc = fitz.open(pdf_path)
-        fields = {}
+        """Extracts all fillable fields from a multi-page PDF with additional metadata and their labels."""
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
-        for page_num, page in enumerate(doc, start=0):
-            for widget in page.widgets():
-                if widget.field_name:
-                    field_name = widget.field_name.strip()
-                    field_type = widget.field_type
-                    field_rect = widget.rect
-                    field_flags = widget.field_flags
+        logger.info(f"Extracting labels for existing fields from: {pdf_path}")
+        print("🔍 Extracting all fillable fields and their labels...")
 
-                    fields[field_name] = {
-                        "page_num": page_num,
-                        "type": field_type,
-                        "rect": [field_rect.x0, field_rect.y0, field_rect.x1, field_rect.y1],
-                        "flags": field_flags,
-                        "is_readonly": bool(field_flags & 1),
-                        "current_value": widget.field_value
-                    }
+        try:
+            doc = fitz.open(pdf_path)
 
-        print(f"✅ Extracted {len(fields)} fields across {len(doc)} pages.")
-        for field, info in fields.items():
-            readonly_status = "READ-ONLY" if info["is_readonly"] else "EDITABLE"
-            print(f" - Field: '{field}' (Page {info['page_num'] + 1}) [{readonly_status}]")
+            # First, extract basic fields using PyMuPDF
+            pymupdf_fields = {}
 
-        doc.close()
-        return fields
+            for page_num, page in enumerate(doc):
+                try:
+                    for widget in page.widgets():
+                        if not widget.field_name:
+                            continue
+
+                        field_name = widget.field_name.strip()
+                        field_type = widget.field_type
+                        field_rect = widget.rect
+                        field_flags = widget.field_flags
+
+                        # Check if the field is a checkbox
+                        is_checkbox = field_type == 4  # Checkbox type in PyMuPDF
+
+                        pymupdf_fields[field_name] = {
+                            "page_num": page_num,
+                            "rect": [field_rect.x0, field_rect.y0, field_rect.x1, field_rect.y1],
+                            "field_type": field_type,
+                            "flags": field_flags,
+                            "is_readonly": bool(field_flags & 1),
+                            "current_value": widget.field_value,
+                            "is_checkbox": is_checkbox
+                        }
+                except Exception as e:
+                    logger.error(f"Error extracting basic fields from page {page_num}: {e}")
+                    print(f"⚠️ Error extracting fields from page {page_num}: {e}")
+
+            # Now use Gemini to identify labels for these fields
+            field_labels = {}
+
+            for page_num in range(len(doc)):
+                page_fields = {k: v for k, v in pymupdf_fields.items() if v["page_num"] == page_num}
+
+                if not page_fields:
+                    continue
+
+                # Get page image
+                img = self._get_page_image(doc[page_num])
+
+                # Initialize Gemini model
+                model = genai.GenerativeModel(self.model_name)
+
+                # Prepare data for the prompt
+                fields_info = []
+                for field_name, info in page_fields.items():
+                    fields_info.append({
+                        "name": field_name,
+                        "rect": info["rect"],
+                        "type": info["field_type"],
+                        "is_checkbox": info["is_checkbox"]
+                    })
+
+                # Create prompt focusing on identifying labels
+                prompt = f"""
+                I have a PDF form with the following form fields on this page:
+                {json.dumps(fields_info, indent=2)}
+
+                For each form field listed above, identify the associated label or descriptive text near the field.
+                Consider proximity, alignment, and visual relationships to determine which text is meant to label each field.
+
+                For checkboxes (field type 4), pay special attention to the text that describes what checking the box means.
+
+                Return a JSON object where:
+                - Each key is the original field name
+                - Each value is the text of the label associated with that field
+
+                Example:
+                {{
+                  "firstName": "First Name:",
+                  "lastName": "Last Name:",
+                  "dob": "Date of Birth",
+                  "checkField1": "I agree to the terms and conditions",
+                  "checkbox2": "Include me in the mailing list"
+                }}
+
+                Return valid JSON only.
+                """
+
+                # Make request to Gemini
+                for attempt in range(self.max_retries):
+                    try:
+                        response = model.generate_content([prompt, img])
+                        response_text = response.text
+
+                        # Try to extract JSON
+                        try:
+                            labels_data = json.loads(response_text)
+                            # Update the field_labels dictionary
+                            field_labels.update(labels_data)
+                            break
+                        except json.JSONDecodeError:
+                            # Try to find JSON in the response
+                            import re
+                            json_match = re.search(r'```json\n(.*?)\n```', response_text, re.DOTALL)
+                            if json_match:
+                                try:
+                                    labels_data = json.loads(json_match.group(1))
+                                    field_labels.update(labels_data)
+                                    break
+                                except json.JSONDecodeError:
+                                    pass
+
+                            # One more attempt with any JSON-like structure
+                            json_match = re.search(r'(\{.*\})', response_text, re.DOTALL)
+                            if json_match:
+                                try:
+                                    labels_data = json.loads(json_match.group(1))
+                                    field_labels.update(labels_data)
+                                    break
+                                except json.JSONDecodeError:
+                                    pass
+
+                            logger.warning(f"Could not extract valid JSON for labels on attempt {attempt + 1}")
+
+                    except Exception as e:
+                        logger.warning(f"Gemini API error on labels attempt {attempt + 1}: {e}")
+
+                    # Wait before retry
+                    if attempt < self.max_retries - 1:
+                        time.sleep(2 * (attempt + 1))
+
+            # Update the pymupdf_fields with the labels
+            for field_name, label in field_labels.items():
+                if field_name in pymupdf_fields:
+                    pymupdf_fields[field_name]["label"] = label
+                    logger.info(f"Field: '{field_name}' - Label: '{label}'")
+                    print(f" - Field: '{field_name}' - Label: '{label}'")
+
+            # Print summary
+            print(f"✅ Extracted {len(pymupdf_fields)} fields across {len(doc)} pages.")
+            for field_name, info in pymupdf_fields.items():
+               # Check if the field is a checkbox - improve detection
+               field_type = info.get("field_type")
+               is_checkbox = field_type == 4  # Standard checkbox type
+
+            # Additional detection based on field name
+               if not is_checkbox and "check" in field_name.lower():
+                print(f"✓ Detected checkbox by name: {field_name}")
+                is_checkbox = True
+
+            pymupdf_fields[field_name]["is_checkbox"] = is_checkbox
+            doc.close()
+            return pymupdf_fields
+
+        except Exception as e:
+            logger.error(f"Failed to extract labels for existing fields: {e}")
+            print(f"❌ Error extracting fields: {e}")
+            raise
 
     async def extract_ocr_text(self, pdf_path: str) -> List[Dict[str, Any]]:
         """Extract text from PDF using OCR with position information."""
@@ -131,142 +282,544 @@ class MultiAgentFormFiller:
             binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                            cv2.THRESH_BINARY_INV, 11, 2)
 
-            results = self.ocr_reader.readtext(binary)
+            results = self.ocr_reader.ocr(binary, cls=True)
 
-            if len(results) < 10:
+            if not results[0]:
                 _, threshold = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
-                results.extend(self.ocr_reader.readtext(threshold))
+                additional_results = self.ocr_reader.ocr(threshold, cls=True)
 
+                if additional_results[0]:
+                    results = additional_results
+
+            if results[0]:
                 unique_results = []
                 seen_texts = set()
-                for item in results:
-                    text = item[1].strip().lower()
-                    if text and text not in seen_texts:
+
+                for line in results[0]:
+                    bbox, (text, prob) = line
+
+                    text = text.strip().lower()
+                    if text and text not in seen_texts and prob >= 0.4:
                         seen_texts.add(text)
-                        unique_results.append(item)
-                results = unique_results
+                        unique_results.append((bbox, text, prob))
 
-            for (bbox, text, prob) in results:
-                if prob < 0.4 or not text.strip():
-                    continue
+                for (bbox, text, prob) in unique_results:
+                    if prob < 0.4 or not text.strip():
+                        continue
 
-                x1, y1 = bbox[0]
-                x2, y2 = bbox[2]
+                    # PaddleOCR format: [[x1,y1], [x2,y1], [x2,y2], [x1,y2]]
+                    x1, y1 = bbox[0]
+                    x2, y2 = bbox[2]
 
-                cleaned_text = text.strip()
+                    cleaned_text = text.strip()
+                    cleaned_text = ''.join(c for c in cleaned_text if c.isprintable())
 
-                cleaned_text = ''.join(c for c in cleaned_text if c.isprintable())
-
-                ocr_results.append({
-                    "page_num": page_num,
-                    "text": cleaned_text,
-                    "raw_text": text,
-                    "confidence": float(prob),
-                    "position": {
-                        "x1": float(x1),
-                        "y1": float(y1),
-                        "x2": float(x2),
-                        "y2": float(y2)
-                    }
-                })
+                    ocr_results.append({
+                        "page_num": page_num,
+                        "text": cleaned_text,
+                        "raw_text": text,
+                        "confidence": float(prob),
+                        "position": {
+                            "x1": float(x1),
+                            "y1": float(y1),
+                            "x2": float(x2),
+                            "y2": float(y2)
+                        }
+                    })
 
         doc.close()
         print(f"✅ Extracted {len(ocr_results)} text elements using OCR.")
         return ocr_results
 
-    async def direct_match_ocr_to_json(self, ocr_elements: List[Dict[str, Any]], flat_json: Dict[str, Any]) -> Dict[
-        str, Any]:
-        """Directly match OCR extracted text to JSON fields without AI intervention for immediate filling."""
-        print("🔍 Performing direct OCR-to-JSON matching...")
-        matches = {}
+    async def detect_checkboxes(self, pdf_path: str, json_data: Dict[str, Any],
+                                pdf_fields: Dict[str, Dict[str, Any]]) -> List[FieldMatch]:
+        """Detect checkboxes specifically for registered agent and member/manager options using AI analysis."""
+        print("🔍 Analyzing checkboxes using AI agent...")
 
-        # Extract label-like OCR elements
-        potential_labels = []
-        for elem in ocr_elements:
-            text = elem["text"].strip()
-            # Consider elements with certain characteristics as potential labels
-            if (len(text) < 50 and text.endswith(':')) or any(text.lower().endswith(suffix) for suffix in
-                                                              [' name', ' address', ' date', ' number', ' email',
-                                                               ' phone']):
-                potential_labels.append(elem)
+        # Extract all form fields without filtering
+        all_fields = {}
+        for k, v in pdf_fields.items():
+            field_info = {
+                "field_name": k,
+                "field_type": v.get("field_type", "Unknown"),
+                "label": v.get("label", "Unknown"),
+                "page_num": v["page_num"] + 1,
+                "rect": v["rect"]
+            }
+            all_fields[k] = field_info
 
-        # For each potential label, look for a nearby element that might be fillable
-        for label in potential_labels:
-            label_text = label["text"].strip().lower()
-            label_page = label["page_num"]
-            label_pos = label["position"]
+        # Get PDF metadata
 
-            # Clean up label text for matching (remove colons, etc.)
-            clean_label = re.sub(r'[\:\?\*]', '', label_text)
-            clean_label = clean_label.strip()
+        # Flatten the JSON data
+        flat_json = self.flatten_json(json_data)
 
-            # Find JSON fields that might match this label
-            matching_json_fields = []
-            for json_key, json_value in flat_json.items():
-                # Convert json key to a comparable format
-                key_parts = json_key.split('.')
-                last_part = key_parts[-1].lower()
-                # Clean up key for matching
-                clean_key = re.sub(r'_', ' ', last_part)
-                clean_key = re.sub(r'[\[\]\d]', '', clean_key)
+        # Create a comprehensive prompt for the AI agent
+        prompt = f"""
+        You are an expert AI agent specializing in legal form analysis. Your task is to determine which checkboxes need to be checked on an LLC formation document.
 
-                # Check for similarity between label and key
-                similarity = SequenceMatcher(None, clean_label, clean_key).ratio()
-                if similarity > 0.7 or clean_key in clean_label or clean_label in clean_key:
-                    matching_json_fields.append((json_key, json_value, similarity))
+        I need you to find and mark checkboxes for TWO specific decisions:
 
-            # Sort by similarity score
-            matching_json_fields.sort(key=lambda x: x[2], reverse=True)
+        1. REGISTERED AGENT TYPE:
+           - Common options: "commercial registered agent" vs "non-commercial registered agent"
 
-            if matching_json_fields:
-                best_match_key, best_match_value, _ = matching_json_fields[0]
+        2. LLC MANAGEMENT STRUCTURE:
+           - Common options: "member-managed LLC" vs "manager-managed LLC"
 
-                # Now look for a potential field area near this label
-                for elem in ocr_elements:
-                    if elem["page_num"] != label_page or elem == label:
-                        continue
+        Here is the form data from the user:
+        {json.dumps(flat_json, indent=2, cls=NumpyEncoder)}
 
-                    elem_pos = elem["position"]
+        Here are ALL form fields in the PDF (some may be checkboxes):
+        {json.dumps(all_fields, indent=2)}
 
-                    # Check if element is to the right or below the label
-                    is_right = (elem_pos["x1"] > label_pos["x2"] and
-                                abs(elem_pos["y1"] - label_pos["y1"]) < 30)
-                    is_below = (elem_pos["y1"] > label_pos["y2"] and
-                                abs(elem_pos["x1"] - label_pos["x1"]) < 100 and
-                                elem_pos["y1"] - label_pos["y2"] < 50)
+        
 
-                    if is_right or is_below:
-                        # This is likely a fillable area
-                        matches[best_match_key] = {
-                            "ocr_text": label["text"],
-                            "page_num": label_page,
-                            "x1": elem_pos["x1"],
-                            "y1": elem_pos["y1"],
-                            "x2": elem_pos["x2"],
-                            "y2": elem_pos["y2"],
-                            "position": "right" if is_right else "below",
-                            "json_value": best_match_value
-                        }
-                        break
+        INSTRUCTIONS:
 
-                # If no suitable field area found, create one next to the label
-                if best_match_key not in matches:
-                    x1, y1 = label_pos["x2"] + 10, label_pos["y1"]
-                    x2, y2 = x1 + 150, y1 + (label_pos["y2"] - label_pos["y1"])
+        1. Analyze ALL form fields to identify potential checkboxes, even if they're not explicitly labeled as checkboxes.
+        2. Look for fields that appear to be related to registered agent selection or LLC management structure.
+        3. Use creative problem-solving to identify checkboxes - they might be buttons, radio buttons, or other field types.
+        4. For fields with limited or missing labels, infer their purpose from their location, nearby fields, or form context.
+        5. Determine which checkboxes should be checked based on the user's data.
 
-                    matches[best_match_key] = {
-                        "ocr_text": label["text"],
-                        "page_num": label_page,
-                        "x1": x1,
-                        "y1": y1,
-                        "x2": x2,
-                        "y2": y2,
-                        "position": "right",
-                        "json_value": best_match_value
-                    }
+        APPROACH THIS TASK COMPREHENSIVELY:
+        - Don't limit yourself to obvious checkbox fields
+        - Consider field names, labels, locations, and types
+        - Think about what would make logical sense based on the form structure
+        - Be thorough in your examination of all potential checkbox candidates
 
-        print(f"✅ Directly matched {len(matches)} OCR elements to JSON fields.")
-        return matches
+        Return a JSON object with the following structure:
+        {{
+        "checkbox_matches": [
+                {{
+                    "json_field": "[relevant JSON field that determined this choice]",
+                    "pdf_field": "[field name in PDF that should be checked]",
+                    "confidence": 0.0-1.0,
+                    "suggested_value": true,
+                    "reasoning": "Detailed explanation of why this checkbox should be checked...",
+                    "category": "[REGISTERED_AGENT or MEMBER_MANAGER]",
+                    "is_checkbox": true
+                }},
+                ...
+            ]
+        }}
+
+        IMPORTANT: 
+        - Be thorough and creative in identifying checkboxes
+        - Provide detailed reasoning for each match
+        - Return valid JSON only
+        """
+
+        # Send to AI and process response
+        try:
+            response = await self.checkbox_agent.run(prompt)
+            result = self.parse_checkbox_response(response.data)
+
+            if not result or not result.get("checkbox_matches"):
+                print("⚠️ No checkbox matches were found by the AI.")
+                print("Attempting secondary analysis with OCR data...")
+                return await self.detect_checkboxes_with_ocr(pdf_path, json_data, pdf_fields)
+
+            checkbox_matches = []
+            for match in result.get("checkbox_matches", []):
+                try:
+                    validated_match = FieldMatch(
+                        json_field=match.get("json_field", ""),
+                        pdf_field=match.get("pdf_field", ""),
+                        confidence=match.get("confidence", 1.0),
+                        suggested_value=match.get("suggested_value", True),
+                        reasoning=match.get("reasoning", ""),
+                        is_checkbox=True
+                    )
+                    checkbox_matches.append(validated_match)
+                    print(
+                        f"✅ AI identified {match.get('category', 'Unknown')} checkbox match: {match.get('pdf_field')} → {match.get('suggested_value')}")
+                    print(f"   Reason: {match.get('reasoning', 'No reasoning provided')}")
+
+                    # Check the checkbox
+                    self.check_checkbox_immediately(pdf_path, match.get('pdf_field'), pdf_fields)
+                except Exception as e:
+                    print(f"⚠️ Error processing checkbox match: {str(e)}")
+
+            return checkbox_matches
+
+        except Exception as e:
+            print(f"❌ Error in AI checkbox detection: {str(e)}")
+            return []
+
+    async def detect_checkboxes_with_ocr(self, pdf_path: str, json_data: Dict[str, Any],
+                                         pdf_fields: Dict[str, Dict[str, Any]]) -> List[FieldMatch]:
+        """Use OCR data to help the AI agent identify checkboxes when standard detection fails."""
+        print("🔍 Using OCR data to help identify checkboxes...")
+
+        try:
+            # Extract OCR text from the PDF
+            ocr_data = await self.extract_ocr_text(pdf_path)
+
+            # Flatten the JSON data
+            flat_json = self.flatten_json(json_data)
+
+            # Create a prompt that includes OCR data
+            prompt = f"""
+            You are an expert AI agent specializing in legal form analysis. The standard checkbox detection on this form failed.
+            I need you to use OCR text data to identify which checkboxes need to be checked.
+
+            Focus on finding checkboxes related to:
+
+            1. REGISTERED AGENT TYPE:
+               - Common options: "commercial registered agent" vs "non-commercial registered agent"
+
+            2. LLC MANAGEMENT STRUCTURE:
+               - Common options: "member-managed LLC" vs "manager-managed LLC"
+
+            Here is the OCR text extracted from the PDF:
+            {json.dumps(ocr_data, indent=2)}
+
+            Here is the form data from the user:
+            {json.dumps(flat_json, indent=2, cls=NumpyEncoder)}
+
+            Here are all form fields in the PDF:
+            {json.dumps({k: {
+                "field_type": v.get("field_type", "Unknown"),
+                "label": v.get("label", "Unknown"),
+                "page_num": v["page_num"] + 1,
+                "rect": v["rect"]
+            } for k, v in pdf_fields.items()}, indent=2)}
+
+            INSTRUCTIONS:
+
+            1. Analyze the OCR text to identify text that indicates checkbox options for registered agent or management structure
+            2. Look at the PDF form fields and identify which ones might be checkboxes near these text elements
+            3. Determine which checkboxes should be checked based on the user's data
+            4. Be creative and flexible - form fields might be incorrectly labeled or categorized
+
+            Return a JSON object with the following structure:
+            {{
+            "checkbox_matches": [
+                    {{
+                        "json_field": "[relevant JSON field that determined this choice]",
+                        "pdf_field": "[field name in PDF that should be checked]",
+                        "confidence": 0.0-1.0,
+                        "suggested_value": true,
+                        "reasoning": "Detailed explanation of why this checkbox should be checked...",
+                        "category": "[REGISTERED_AGENT or MEMBER_MANAGER]",
+                        "is_checkbox": true,
+                        "related_ocr_text": "[relevant OCR text that helped identify this checkbox]"
+                    }},
+                    ...
+                ]
+            }}
+
+            Return valid JSON only.
+            """
+
+            # Send to AI and process response
+            response = await self.checkbox_agent.run(prompt)
+            result = self.parse_checkbox_response(response.data)
+
+            if not result or not result.get("checkbox_matches"):
+                print("⚠️ No checkbox matches were found using OCR analysis.")
+                print("Attempting final analysis using best-guess approach...")
+                return await self.detect_checkboxes_best_guess(pdf_path, json_data, pdf_fields)
+
+            checkbox_matches = []
+            for match in result.get("checkbox_matches", []):
+                try:
+                    validated_match = FieldMatch(
+                        json_field=match.get("json_field", ""),
+                        pdf_field=match.get("pdf_field", ""),
+                        confidence=match.get("confidence", 0.8),
+                        suggested_value=match.get("suggested_value", True),
+                        reasoning=match.get("reasoning", ""),
+                        is_checkbox=True
+                    )
+                    checkbox_matches.append(validated_match)
+                    print(
+                        f"✅ OCR-aided detection found checkbox match: {match.get('pdf_field')} → {match.get('suggested_value')}")
+                    print(f"   Reason: {match.get('reasoning', 'No reasoning provided')}")
+                    print(f"   Related OCR text: {match.get('related_ocr_text', 'None')}")
+
+                    # Check the checkbox
+                    self.check_checkbox_immediately(pdf_path, match.get('pdf_field'), pdf_fields)
+                except Exception as e:
+                    print(f"⚠️ Error processing OCR checkbox match: {str(e)}")
+
+            return checkbox_matches
+
+        except Exception as e:
+            print(f"❌ Error in OCR-based checkbox detection: {str(e)}")
+            return []
+
+    async def detect_checkboxes_best_guess(self, pdf_path: str, json_data: Dict[str, Any],
+                                           pdf_fields: Dict[str, Dict[str, Any]]) -> List[FieldMatch]:
+        """Final best-guess approach using AI agent when other methods fail."""
+        print("🔍 Using best-guess approach to identify checkboxes...")
+
+        try:
+            # Flatten the JSON data
+            flat_json = self.flatten_json(json_data)
+
+            # Extract key information that will help with checkbox identification
+            agent_info = {}
+            management_info = {}
+
+            for k, v in flat_json.items():
+                k_lower = k.lower()
+                if any(term in k_lower for term in ["agent", "registered", "commercial"]):
+                    agent_info[k] = v
+                elif any(term in k_lower for term in ["manage", "member", "manager", "structure"]):
+                    management_info[k] = v
+
+            # Create a prompt for best-guess analysis
+            prompt = f"""
+            You are an expert AI agent specializing in legal form analysis. Previous checkbox detection methods have failed.
+            I need you to make your best guess about which form fields should be treated as checkboxes and checked.
+
+            Focus on finding fields related to:
+
+            1. REGISTERED AGENT TYPE:
+               - Common options: "commercial registered agent" vs "non-commercial registered agent"
+
+            2. LLC MANAGEMENT STRUCTURE:
+               - Common options: "member-managed LLC" vs "manager-managed LLC"
+
+            Key registered agent information from the user:
+            {json.dumps(agent_info, indent=2, cls=NumpyEncoder)}
+
+            Key management structure information from the user:
+            {json.dumps(management_info, indent=2, cls=NumpyEncoder)}
+
+            Form fields to consider (showing field type and label):
+            {json.dumps({k: {
+                "field_type": v.get("field_type", "Unknown"),
+                "label": v.get("label", "Unknown")
+            } for k, v in pdf_fields.items()}, indent=2)}
+
+            INSTRUCTIONS:
+
+            1. Make your BEST GUESS about which fields might be checkboxes for registered agent and management structure
+            2. Consider ALL fields, not just those labeled as checkboxes - they might be buttons, text fields, or other types
+            3. Use creative reasoning based on field names, labels, and types
+            4. Determine which fields should be checked based on the user's data
+
+            Return a JSON object with the following structure:
+            {{
+            "checkbox_matches": [
+                    {{
+                        "json_field": "[relevant JSON field that determined this choice]",
+                        "pdf_field": "[field name in PDF that should be checked]",
+                        "confidence": 0.0-1.0,
+                        "suggested_value": true,
+                        "reasoning": "Detailed explanation of why this field might be a checkbox...",
+                        "category": "[REGISTERED_AGENT or MEMBER_MANAGER]",
+                        "is_checkbox": true
+                    }},
+                    ...
+                ]
+            }}
+
+            Return valid JSON only.
+            """
+
+            # Send to AI and process response
+            response = await self.checkbox_agent.run(prompt)
+            result = self.parse_checkbox_response(response.data)
+
+            if not result or not result.get("checkbox_matches"):
+                print("❌ All checkbox detection methods failed.")
+                return []
+
+            checkbox_matches = []
+            for match in result.get("checkbox_matches", []):
+                try:
+                    validated_match = FieldMatch(
+                        json_field=match.get("json_field", ""),
+                        pdf_field=match.get("pdf_field", ""),
+                        confidence=match.get("confidence", 0.6),  # Lower confidence for best-guess approach
+                        suggested_value=match.get("suggested_value", True),
+                        reasoning=match.get("reasoning", ""),
+                        is_checkbox=True
+                    )
+                    checkbox_matches.append(validated_match)
+                    print(
+                        f"✅ Best-guess detection found potential checkbox: {match.get('pdf_field')} → {match.get('suggested_value')}")
+                    print(f"   Reason: {match.get('reasoning', 'No reasoning provided')}")
+
+                    # Check the checkbox
+                    self.check_checkbox_immediately(pdf_path, match.get('pdf_field'), pdf_fields)
+                except Exception as e:
+                    print(f"⚠️ Error processing best-guess checkbox match: {str(e)}")
+
+            return checkbox_matches
+
+        except Exception as e:
+            print(f"❌ Error in best-guess checkbox detection: {str(e)}")
+            return []
+    def retry_checkbox_with_alternatives(self, pdf_path: str, field_name: str,
+                                         pdf_fields: Dict[str, Dict[str, Any]]) -> bool:
+        """Try alternative approaches for stubborn checkboxes that resist standard methods."""
+        try:
+            field_info = pdf_fields.get(field_name)
+            if not field_info:
+                return False
+
+            page_num = field_info["page_num"]
+            doc = fitz.open(pdf_path)
+            page = doc[page_num]
+
+            # Try multiple approaches for stubborn checkboxes
+            # Approach 1: Try setting a visual mark on the checkbox using annotations
+            for widget in page.widgets():
+                if widget.field_name == field_name:
+                    rect = widget.rect
+
+                    # First try adding a check mark using annotation
+                    try:
+                        # Add a visible X mark annotation over the checkbox
+                        annot = page.add_freetext_annot(
+                            rect=rect,
+                            text="X",
+                            fontsize=min(rect.width, rect.height) * 0.8,
+                            text_color=(0, 0, 0),
+                            align=fitz.TEXT_ALIGN_CENTER
+                        )
+                        doc.save(pdf_path, deflate=True, clean=True)
+                        doc.close()
+                        return True
+                    except Exception as e:
+                        print(f"Annotation approach failed: {e}")
+
+                    # Approach 2: Try marking directly on the PDF using drawing functions
+                    try:
+                        # Draw an X mark
+                        page.draw_line(rect.tl, rect.br, color=(0, 0, 0), width=2)
+                        page.draw_line(rect.tr, rect.bl, color=(0, 0, 0), width=2)
+                        doc.save(pdf_path, deflate=True, clean=True)
+                        doc.close()
+                        return True
+                    except Exception as e:
+                        print(f"Drawing approach failed: {e}")
+
+            doc.close()
+            return False
+
+        except Exception as e:
+            print(f"❌ All alternative checkbox methods failed: {e}")
+            return False
+
+    def check_checkbox_immediately(self, pdf_path: str, field_name: str, pdf_fields: Dict[str, Dict[str, Any]]) -> bool:
+        """Immediately checks a checkbox in the PDF once detected with improved options for compatibility."""
+        try:
+            if not field_name or field_name not in pdf_fields:
+                print(f"⚠️ Checkbox field '{field_name}' not found in PDF")
+                return False
+
+            field_info = pdf_fields.get(field_name)
+            if not field_info:
+                print(f"⚠️ Field info for '{field_name}' not found")
+                return False
+
+            # Better checkbox detection
+            is_checkbox = (field_info.get("is_checkbox", False) or
+                           field_info.get("field_type") == 4 or
+                           "check" in field_name.lower())
+
+            if not is_checkbox:
+                print(f"⚠️ Field '{field_name}' is not a checkbox")
+                return False
+
+            page_num = field_info["page_num"]
+
+            doc = fitz.open(pdf_path)
+            page = doc[page_num]
+
+            checkbox_checked = False
+            for widget in page.widgets():
+                if widget.field_name == field_name:
+                    print(f"🔳 Checking checkbox: '{field_name}' on page {page_num + 1}")
+
+                    # Try different checkbox value options for better compatibility
+                    checkbox_values = ["Yes", "On", "Checked", "True", "X", "1"]
+
+                    if hasattr(widget, 'choice_values') and widget.choice_values:
+                        # If the widget has predefined choice values, use the first one
+                        try:
+                            widget.field_value = widget.choice_values[0]
+                            widget.update()
+                            checkbox_checked = True
+                            print(f"✅ Checkbox checked with choice value: {widget.choice_values[0]}")
+                        except Exception as e:
+                            print(f"⚠️ Failed with choice value: {e}")
+
+                    if not checkbox_checked:
+                        # Try standard values for checkboxes
+                        for val in checkbox_values:
+                            try:
+                                widget.field_value = val
+                                widget.update()
+                                checkbox_checked = True
+                                print(f"✅ Checkbox checked with value: {val}")
+                                break
+                            except Exception as e:
+                                continue
+
+                    break
+
+            if checkbox_checked:
+                # Save with clean=True to avoid PDF corruption
+                doc.save(pdf_path, deflate=True, clean=True)
+                print(f"✅ Checkbox '{field_name}' successfully checked")
+                doc.close()
+                return True
+            else:
+                print(f"⚠️ Checkbox widget for '{field_name}' not found or couldn't be checked on page {page_num}")
+                doc.close()
+                return False
+
+        except Exception as e:
+            print(f"❌ Error checking checkbox immediately: {e}")
+            return False
+
+    def parse_checkbox_response(self, response_text: str) -> Dict[str, List]:
+        """Parse the AI response specific to checkbox detection with better JSON extraction."""
+        json_patterns = [
+            r'```json\s*([\s\S]*?)\s*```',
+            r'```\s*([\s\S]*?)\s*```',
+            r'(\{[\s\S]*\})'
+        ]
+
+        for pattern in json_patterns:
+            json_match = re.search(pattern, response_text)
+            if json_match:
+                response_text = json_match.group(1)
+                break
+
+        response_text = response_text.strip()
+
+        # Try to extract JSON even if surrounded by extra text
+        try:
+            # Find the first { and last } to extract potential JSON
+            start_idx = response_text.find('{')
+            end_idx = response_text.rfind('}') + 1
+
+            if start_idx >= 0 and end_idx > start_idx:
+                json_str = response_text[start_idx:end_idx]
+                data = json.loads(json_str)
+                return data
+        except json.JSONDecodeError:
+            pass
+
+        # If the above failed, try the original response
+        try:
+            data = json.loads(response_text)
+            return data
+        except json.JSONDecodeError as e:
+            print(f"❌ AI returned invalid JSON for checkboxes: {e}")
+            print(f"Failed text: {response_text[:100]}...")
+            return {}
+
+
+
+
 
     async def match_and_fill_fields(self, pdf_path: str, json_data: Dict[str, Any], output_pdf: str,
                                     max_retries: int = 3):
@@ -281,42 +834,13 @@ class MultiAgentFormFiller:
         flat_json = self.flatten_json(json_data)
         field_context = self.analyze_field_context(pdf_fields, ocr_text_elements)
 
-        # NEW: Perform direct OCR-to-JSON matching for immediate filling
-        self.ocr_json_matches = await self.direct_match_ocr_to_json(ocr_text_elements, flat_json)
-
-        # Create a temp file for immediate OCR filling
-        temp_immediate = f"{output_pdf}.immediate"
-        shutil.copy2(pdf_path, temp_immediate)
-
-        # Fill in direct OCR matches immediately
-        if self.ocr_json_matches:
-            print("🔍 Immediately filling directly matched OCR-to-JSON fields...")
-            ocr_immediate_matches = []
-
-            for json_field, match_info in self.ocr_json_matches.items():
-                ocr_match = OCRFieldMatch(
-                    json_field=json_field,
-                    ocr_text=match_info["ocr_text"],
-                    page_num=match_info["page_num"],
-                    x1=match_info["x1"],
-                    y1=match_info["y1"],
-                    x2=match_info["x2"],
-                    y2=match_info["y2"],
-                    confidence=0.9,
-                    suggested_value=match_info["json_value"],
-                    reasoning="Direct match from OCR text to JSON field"
-                )
-                ocr_immediate_matches.append(ocr_match)
-
-            self.fill_ocr_fields(temp_immediate, ocr_immediate_matches, ocr_text_elements)
-            print(f"✅ Immediately filled {len(ocr_immediate_matches)} fields based on direct OCR matching")
-
         # Print available JSON fields for debugging
         print("Available JSON fields:")
         for key in flat_json.keys():
+
             print(f" - {key}: {flat_json[key]}")
 
-        prompt = FIELD_MATCHING_PROMPT_UPDATED.format(
+        prompt = FIELD_MATCHING_PROMPT_UPDATED1.format(
             json_data=json.dumps(flat_json, indent=2, cls=NumpyEncoder),
             pdf_fields=json.dumps([{"uuid": k, "info": v} for k, v in pdf_fields.items()], indent=2, cls=NumpyEncoder),
             ocr_elements=json.dumps(ocr_text_elements, indent=2, cls=NumpyEncoder),
@@ -336,16 +860,19 @@ class MultiAgentFormFiller:
 
             print(f"Attempt {attempt + 1}/{max_retries} failed to get valid matches. Retrying...")
 
-        if not matches and not ocr_matches and not self.ocr_json_matches:
+        if not matches and not ocr_matches:
             print("⚠️ No valid field matches were found after all attempts.")
             return False
 
+        # Detect and add checkboxes that should be checked
+        checkbox_matches = await self.detect_checkboxes(pdf_path, json_data, pdf_fields)
+
         temp_output = f"{output_pdf}.temp"
-        shutil.copy2(temp_immediate, temp_output)  # Use the immediate filled version
+        shutil.copy2(pdf_path, temp_output)
 
         try:
-            print("Filling form fields and AI-detected OCR fields...")
-            combined_matches = matches + [
+            print("Filling form fields, checkboxes, and OCR-detected fields together with UUID-based matching...")
+            combined_matches = matches + checkbox_matches + [
                 FieldMatch(
                     json_field=m.json_field,
                     pdf_field=m.pdf_field,  # Ensuring OCR text maps correctly to UUID
@@ -492,6 +1019,7 @@ class MultiAgentFormFiller:
             for match in data.get("matches", []):
                 match.setdefault("confidence", 1.0)
                 match.setdefault("reasoning", "No reasoning provided.")
+                match.setdefault("is_checkbox", False)
 
                 try:
                     validated_match = FieldMatch(**match)
@@ -507,6 +1035,7 @@ class MultiAgentFormFiller:
                 match.setdefault("y1", 100)
                 match.setdefault("x2", 300)
                 match.setdefault("y2", 120)
+                match.setdefault("is_checkbox", False)
 
                 try:
                     validated_match = OCRFieldMatch(**match)
@@ -522,7 +1051,7 @@ class MultiAgentFormFiller:
 
     def fill_pdf_immediately(self, output_pdf: str, matches: List[FieldMatch],
                              pdf_fields: Dict[str, Dict[str, Any]]) -> bool:
-        """Fills PDF form fields using PyMuPDF (fitz) with improved handling of readonly fields."""
+        """Fills PDF form fields using PyMuPDF (fitz) with improved handling of readonly fields and checkboxes."""
         doc = fitz.open(output_pdf)
         filled_fields = []
 
@@ -540,19 +1069,52 @@ class MultiAgentFormFiller:
                     continue
 
                 page_num = field_info["page_num"]
-                updates.append((page_num, match.pdf_field, match.suggested_value))
+
+                # Special handling for checkbox values
+                if field_info.get("is_checkbox", False) or match.is_checkbox:
+                    # Convert various true/false values to appropriate checkbox value
+                    value = match.suggested_value
+                    if isinstance(value, bool):
+                        checkbox_value = "Yes" if value else "No"
+                    elif isinstance(value, str):
+                        value_lower = value.lower()
+                        checkbox_value = "Yes" if value_lower in ["yes", "true", "1", "checked", "selected"] else "No"
+                    elif isinstance(value, (int, float)):
+                        checkbox_value = "Yes" if value in [1, 1.0] else "No"
+                    else:
+                        checkbox_value = "No"
+
+                    updates.append((page_num, match.pdf_field, checkbox_value))
+                    print(f"🔳 Will check checkbox: '{match.pdf_field}' → {checkbox_value}")
+                else:
+                    updates.append((page_num, match.pdf_field, match.suggested_value))
 
         for page_num, field_name, value in updates:
             page = doc[page_num]
             for widget in page.widgets():
                 if widget.field_name == field_name:
-                    print(f"✍️ Filling: '{value}' → '{field_name}' (Page {page_num + 1})")
-                    try:
+                    # Handle different field types correctly
+                    field_type = widget.field_type
+                    field_info = pdf_fields.get(field_name, {})
+                    is_checkbox = field_info.get("is_checkbox", False) or field_type == 4
+
+                    if is_checkbox:
+                        # Handle checkbox specifically
+                        checkbox_val = str(value).lower()
+                        if checkbox_val in ["yes", "true", "1", "checked", "selected"]:
+                            print(f"✅ Checking checkbox: '{field_name}' (Page {page_num + 1})")
+                            widget.field_value = widget.choice_values[0] if hasattr(widget,
+                                                                                    'choice_values') and widget.choice_values else "Yes"
+                        else:
+                            print(f"❌ Leaving checkbox unchecked: '{field_name}' (Page {page_num + 1})")
+                            widget.field_value = "Off"  # Standard value for unchecked boxes
+                    else:
+                        # Handle regular fields
+                        print(f"✍️ Filling: '{value}' → '{field_name}' (Page {page_num + 1})")
                         widget.field_value = str(value)
-                        widget.update()
-                        filled_fields.append(field_name)
-                    except Exception as e:
-                        print(f"⚠️ Error filling {field_name}: {e}")
+
+                    widget.update()
+                    filled_fields.append(field_name)
                     break
 
         try:
@@ -671,6 +1233,8 @@ class MultiAgentFormFiller:
             doc.close()
             return False
 
+
+
     def find_text_position(self, text: str, ocr_elements: List[Dict[str, Any]], page_num: int) -> Dict[str, float]:
         """Find the position of a text element in the OCR results with improved fuzzy matching."""
         if not text or not ocr_elements:
@@ -685,6 +1249,8 @@ class MultiAgentFormFiller:
         for element in ocr_elements:
             if element["page_num"] == page_num and search_text in element["text"].strip().lower():
                 return element["position"]
+
+
 
         best_match = None
         best_ratio = 0.7
@@ -702,7 +1268,6 @@ class MultiAgentFormFiller:
                 words_in_search = set(search_text.split())
                 words_in_element = set(element_text.split())
                 common_words = words_in_search.intersection(words_in_element)
-
                 if common_words:
                     word_ratio = len(common_words) / max(len(words_in_search), 1)
                     if word_ratio > 0.5 and word_ratio > best_ratio:
@@ -732,64 +1297,64 @@ class MultiAgentFormFiller:
             print(f"✅ Used direct file copy as fallback for finalization")
 
     def verify_pdf_filled(self, pdf_path: str) -> bool:
-            """Verifies that the PDF has been filled correctly or has annotations."""
-            try:
-                reader = PdfReader(pdf_path)
-                fields = reader.get_fields()
+        """Verifies that the PDF has been filled correctly or has annotations."""
+        try:
+            reader = PdfReader(pdf_path)
+            fields = reader.get_fields()
 
-                filled_fields = {}
-                if fields:
-                    filled_fields = {k: v.get("/V") for k, v in fields.items() if v.get("/V")}
-                    print(f"✅ Found {len(filled_fields)} filled form fields")
+            filled_fields = {}
+            if fields:
+                filled_fields = {k: v.get("/V") for k, v in fields.items() if v.get("/V")}
+                print(f"✅ Found {len(filled_fields)} filled form fields")
 
-                doc = fitz.open(pdf_path)
-                annotation_count = 0
+            doc = fitz.open(pdf_path)
+            annotation_count = 0
 
-                for page in doc:
-                    annotations = list(page.annots())
-                    annotation_count += len(annotations)
+            for page in doc:
+                annotations = list(page.annots())
+                annotation_count += len(annotations)
 
-                doc.close()
-                print(f"✅ Found {annotation_count} annotations in the PDF")
+            doc.close()
+            print(f"✅ Found {annotation_count} annotations in the PDF")
 
-                return bool(filled_fields) or annotation_count > 0
+            return bool(filled_fields) or annotation_count > 0
 
-            except Exception as e:
-                print(f"❌ Error verifying PDF: {e}")
-                return False
+        except Exception as e:
+            print(f"❌ Error verifying PDF: {e}")
+            return False
 
     def flatten_json(self, data: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
-            """Flattens nested JSON objects into a flat dictionary."""
-            items = {}
-            for key, value in data.items():
-                new_key = f"{prefix}.{key}" if prefix else key
-                if isinstance(value, dict):
-                    items.update(self.flatten_json(value, new_key))
-                elif isinstance(value, list):
-                    for i, item in enumerate(value):
-                        if isinstance(item, dict):
-                            items.update(self.flatten_json(item, f"{new_key}[{i}]"))
-                        else:
-                            items[f"{new_key}[{i}]"] = item
-                else:
-                    items[new_key] = value
-            return items
-
+        """Flattens nested JSON objects into a flat dictionary."""
+        items = {}
+        for key, value in data.items():
+            new_key = f"{prefix}.{key}" if prefix else key
+            if isinstance(value, dict):
+                items.update(self.flatten_json(value, new_key))
+            elif isinstance(value, list):
+                for i, item in enumerate(value):
+                    if isinstance(item, dict):
+                        items.update(self.flatten_json(item, f"{new_key}[{i}]"))
+                    else:
+                        items[f"{new_key}[{i}]"] = item
+            else:
+                items[new_key] = value
+        return items
 async def main():
-        form_filler = MultiAgentFormFiller()
-        template_pdf = "D:\\demo\\Services\\PennsylvaniaLLC.pdf"
-        json_path = "D:\\demo\\Services\\form_data.json"
-        output_pdf = "D:\\demo\\Services\\filledform12.pdf"
+    form_filler = MultiAgentFormFiller()
+    template_pdf = "D:\\demo\\Services\\Maine.pdf"
+    json_path = "D:\\demo\\Services\\form_data.json"
+    output_pdf = "D:\\demo\\Services\\fill_smart8.pdf"
 
-        with open(json_path, "r", encoding="utf-8") as f:
-            json_data = json.load(f)
+    with open(json_path, "r", encoding="utf-8") as f:
+        json_data = json.load(f)
 
-        success = await form_filler.match_and_fill_fields(template_pdf, json_data, output_pdf)
+    success = await form_filler.match_and_fill_fields(template_pdf, json_data, output_pdf)
 
-        if success:
-            print(f"✅ PDF successfully processed: {output_pdf}")
-        else:
-            print(f"❌ PDF processing failed. Please check the output file and logs.")
+    if success:
+        print(f"✅ PDF successfully processed: {output_pdf}")
+    else:
+        print(f"❌ PDF processing failed. Please check the output file and logs.")
+
 
 if __name__ == "__main__":
-        asyncio.run(main())
+    asyncio.run(main())
