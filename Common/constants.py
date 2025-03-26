@@ -979,7 +979,161 @@ FIELD_MATCHING_PROMPT_UPDATED =  """
         }}
         """
 
-MISTRAL_API_KEY= "7NZvr1Bugz4jpKuWks11jX9jMDCbkv3G"
+MISTRAL_API_KEY= "7NZvr1Bugz4jzpKuWks11jX9jMDCbkv3G"
+
+
+
+FIELD_MATCHING_PROMPT_UPDATED4="""
+# 🚨 CRITICAL CERTIFICATE OF ORGANIZATION POPULATION PROTOCOL
+
+## MISSION STATEMENT
+HYPER-PRECISE form population AI with ABSOLUTE PRECISION for the Connecticut Certificate of Organization form. ZERO TOLERANCE for errors.
+
+## COMPREHENSIVE POPULATION GUIDELINES
+
+### 0. PRE-POPULATION MANDATORY CHECKLIST
+- SEMANTIC MATCHING: Exact contextual understanding
+- CONFIDENCE THRESHOLD: Minimum 0.90 for ALL fields
+- EXHAUSTIVE FIELD SCANNING: 100% document coverage
+- DATA INTEGRITY: Exact source data preservation
+- FORMATTING: Precise text adaptation to field constraints
+
+### 1. FILING PARTY SECTION 
+#### MANDATORY POPULATION FIELDS:
+- NAME (Full legal name)
+- COMPLETE MAILING ADDRESS
+- CITY
+- STATE
+- ZIP CODE
+- EMAIL ADDRESS
+- TELEPHONE NUMBER
+
+#### EXTRACTION PROTOCOL:
+- Name Source: 
+  * Primary: `data.contactDetails.fullName`
+  * Fallback: `data.contactDetails.firstName` + `data.contactDetails.lastName`
+- Address: `data.contactDetails.mailingAddress`
+- Email: `data.contactDetails.emailId`
+- Phone: `data.contactDetails.phoneNumber`
+
+#### VALIDATION REQUIREMENTS:
+- COMPLETE email format validation
+- FULL phone number verification
+- ADDRESS component cross-referencing
+- NO PARTIAL OR INCOMPLETE ENTRIES ALLOWED
+
+### 2. LIMITED LIABILITY COMPANY NAME (SECTION 1)
+#### STRICT NAMING REQUIREMENTS:
+- MANDATORY business designation (LLC, L.L.C.)
+- EXACT registered name match
+- NO unauthorized abbreviations
+- CASE-SENSITIVE population
+
+#### EXTRACTION SOURCES:
+- PRIMARY: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
+- SECONDARY: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+
+#### CRITICAL VALIDATION CHECKS:
+- Verify business designation presence
+- Confirm state naming compliance
+- ZERO typos or formatting errors
+- Ensure FULL legal name representation
+
+### 3. PRINCIPAL OFFICE ADDRESS (SECTION 2)
+#### POPULATION RULES:
+- FULL street address MANDATORY
+- NO P.O. BOX ALLOWED
+- ALL address components REQUIRED
+- STATE-SPECIFIC formatting
+
+#### DATA EXTRACTION:
+- Street: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.Street`
+- City: `...Principal_Address.City`
+- State: `...Principal_Address.State`
+- ZIP: `...Principal_Address.ZipCode`
+
+#### VERIFICATION PROTOCOL:
+- Confirm physical address validity
+- STATE and ZIP code MUST match
+- NO street name abbreviations
+- PRECISE address component alignment
+
+### 4. MAILING ADDRESS (SECTION 3)
+#### POPULATION GUIDELINES:
+- P.O. BOX ACCEPTABLE
+- Can differ from principal office address
+- COMPLETE address components MANDATORY
+
+#### EXTRACTION SOURCES:
+- Street/P.O. Box: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Mailing_Address.Street`
+- City: `...Mailing_Address.City`
+- State: `...Mailing_Address.State`
+- ZIP: `...Mailing_Address.ZipCode`
+
+### 5. REGISTERED AGENT DETAILS (SECTION 4)
+#### COMPREHENSIVE AGENT POPULATION PROTOCOL:
+- DETERMINE agent type (individual/entity)
+- FULL legal name MANDATORY
+- SIGNATURE field REQUIRED
+- MULTIPLE ADDRESS REQUIREMENTS:
+  * Business Address (NO P.O. BOX)
+  * Connecticut Mailing Address
+  * Connecticut Residence Address
+
+#### EXTRACTION SOURCES:
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+- Business Address: `...Registered_Agent.RA_Address.Business`
+- Mailing Address: `...Registered_Agent.RA_Address.Mailing`
+- Residence Address: `...Registered_Agent.RA_Address.Residence`
+
+#### CONNECTICUT-SPECIFIC REQUIREMENTS:
+- Mailing Address: STATE MUST be CT
+- Residence Address: STATE MUST be CT
+- NO P.O. BOXES for physical addresses
+- FULL legal name REQUIRED
+
+## FINAL POPULATION VERIFICATION PROTOCOL
+
+### MANDATORY VERIFICATION CHECKLIST:
+1. 100% Field Completion Verification
+2. Data Consistency Cross-Check
+3. Format and Compliance Review
+4. ZERO ERROR Tolerance Scan
+
+### OUTPUT SPECIFICATION:
+```json
+{
+  "population_results": {
+    "total_fields": 20,
+    "populated_fields": 20,
+    "completion_percentage": 100.0,
+    "critical_errors": 0,
+    "warnings": []
+  },
+  "section_matches": [
+    {
+      "section": "Filing Party",
+      "fields_populated": ["Name", "Address", "Email", "Phone"],
+      "confidence": 0.95
+    },
+    {
+      "section": "LLC Name",
+      "fields_populated": ["Company Name", "Business Designation"],
+      "confidence": 0.90
+    }
+  ]
+}
+```
+
+🚨 CRITICAL ALERT: ANY SINGLE UNPOPULATED OR INCORRECT FIELD TRIGGERS IMMEDIATE FULL FORM RE-EXAMINATION! 🚨
+
+### SPECIAL NOTES:
+- CONNECTICUT-SPECIFIC form requirements
+- Revision date: 3/2021
+- Issued by: Secretary of the State of Connecticut
+- Filing Fee: $120
+- Checks payable to: "Secretary of the State"
+"""
 FIELD_MATCHING_PROMPT3 = '''
         You are an expert at intelligent form field matching. I need you to match JSON data to PDF form fields.
 
@@ -1170,315 +1324,89 @@ Place annotations adjacent to but not overlapping the original text
 
         IMPORTANT: Every PDF field must have a suggested value, even if you need to derive one.
 '''
-FIELD_MATCHING_PROMPT_UPDATED3="""
-# Enhanced Field Matching Prompt
-
-You are an expert PDF form filling agent. Your task is to accurately populate PDF forms using data extracted from a provided JSON object. Your primary objective is to achieve maximum field coverage with the highest possible accuracy.
-
-## CRITICAL FIELD VALIDATION PROTOCOL
-
-Every field must undergo a multi-stage validation process before population:
-
-1. **Primary Validation**: Exact name match between JSON field and PDF field
-2. **Secondary Validation**: Semantic similarity match
-3. **Contextual Validation**: Analysis of surrounding text
-4. **Format Validation**: Verify data format matches field requirements
-5. **Final Confirmation**: Explicit reasoning for each field match
-
-**IMPORTANT**: Do not populate ANY field unless you have 100% confidence in the match. Leave fields blank rather than populating with uncertain data.
-
-## STRICT FIELD MATCHING PROTOCOLS
-
-### 1. Universal Field Matching Rules (CRITICAL)
-
-* **MANDATORY MULTI-STEP VERIFICATION PROCESS**:
-   1. Create a comprehensive inventory of ALL fields requiring population
-   2. Assign a match confidence score (0.0-1.0) to each potential match
-   3. Only populate fields with a confidence score of 0.95 or higher
-   4. Document your reasoning for EVERY field match
-   5. Perform a final verification scan for missed fields
-
-* **Field Type Specific Validation**:
-   * Text fields: Verify character length constraints
-   * Numeric fields: Verify numeric format and range
-   * Date fields: Ensure consistent date formatting
-   * Checkbox/Radio: Verify logical selection based on data
-   * Address fields: Ensure address components go in correct fields
-
-* **Critical Field Position Rules**:
-   * NEVER populate address information into name fields
-   * NEVER populate name information into address fields
-   * NEVER populate phone numbers into email fields
-   * NEVER populate dates into numeric fields
-   * Adjust font size ONLY when text exceeds field capacity
-
-### 2. Entity Name Fields (HIGHEST PRIORITY)
-
-* **⚠️ CRITICAL ALERT: ENTITY NAME FIELD DUPLICATION ISSUE ⚠️**
-* **PROBLEM**: Entity name fields must be populated in EVERY instance they appear
-
-* **MANDATORY DETECTION PROTOCOL**:
-   1. Before processing ANY fields, scan the entire document for ALL entity name fields
-   2. Create an inventory of ALL entity name fields with their UUIDs and locations
-   3. Flag fields with terms: "Entity Name", "LLC Name", "Corporation Name", "Business Name", "Company Name"
-   4. Flag ALL fields in signature/certification sections requiring entity name
-   5. Flag ALL fields in headers/footers requiring entity name
-   6. Flag ALL fields in registered agent sections requiring entity name
-   7. Flag ALL fields in organizer/incorporator sections requiring entity name
-   8. Document exact count of entity name fields detected
-
-* **ENTITY NAME SOURCE HIERARCHY**:
-   1. For LLCs: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
-   2. For LLCs (Alternate): `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Alternate_LLC_Name`
-   3. For Corporations: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name` or `Corp_Name`
-   4. Generic: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
-
-* **CRITICAL VERIFICATION STEPS**:
-   1. After form completion, conduct a second full document scan for missed entity name fields
-   2. Count total number of entity name fields populated
-   3. If count is 1 or less than expected, STOP and rescan document
-   4. Verify consistent entity name value across ALL instances
-   5. Explicitly state in reasoning: "I have verified that ALL entity name fields (total count: X) have been populated with identical value"
-
-### 3. Registered Agent Information (CRITICAL)
-
-* **MANDATORY AGENT TYPE DETERMINATION**:
-   1. Analyze `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
-   2. Individual agents: Contains first/last name without corporate identifiers
-   3. Entity/commercial agents: Contains "Inc", "LLC", "Corp", "Company"
-   4. Document agent type determination with explicit reasoning
-
-* **FIELD POPULATION RULES**:
-   * Individual agents: 
-     * Use `RA_Name` ONLY for fields labeled "Individual Registered Agent", "Registered Agent Name", "Natural Person"
-     * Mandatory checkbox selection for individual agent option
-   * Entity/commercial agents:
-     * Use `RA_Name` ONLY for fields labeled "Commercial Registered Agent", "Entity Registered Agent", "Name of Registered Agent Company"
-     * Mandatory checkbox selection for commercial/entity agent option
-     * **CRITICAL**: If registered agent is commercial, ALWAYS check commercial agent checkbox
-
-* **ADDRESS FIELD VALIDATION**:
-   * Registered agent address goes ONLY in address fields
-   * NEVER populate addresses into agent name fields
-   * NEVER populate agent name into address fields
-
-### 4. Address Information (CRITICAL)
-
-* **ADDRESS FIELD DETECTION PROTOCOL**:
-   1. Scan document for ALL address field groups
-   2. Categorize address fields by type: Principal, Registered Agent, Organizer, Governor, Incorporator
-   3. Verify correct JSON path for each address type
-
-* **PRINCIPAL ADDRESS**:
-   * Source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address`
-   * Map each component to correct field: Address_Line_1, City, State, Zip
-   * NEVER combine address components into single field unless requested
-
-* **REGISTERED AGENT ADDRESS**:
-   * Source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent`
-   * Map each component to correct field: RA_Address_Line_1, RA_City, RA_State, RA_Zip
-   * Font size adjustment if text exceeds field capacity
-
-* **OTHER ADDRESS TYPES**:
-   * Match organizer/incorporator/governor addresses to respective JSON paths
-   * Verify correct address type for each field group
-
-### 5. Contact Information (CRITICAL)
-
-* **CONTACT INFORMATION VALIDATION**:
-   * LLC contact name: Combine `data.contactDetails.firstName` + `data.contactDetails.lastName`
-   * Contact email: Use `contactDetails.emailId`
-   * Contact phone: Identify correct JSON field for phone number
-   * Contact address: Use principal address if JSON lacks specific contact address
-
-* **FIELD MATCHING PROTOCOL**:
-   1. Scan document for all contact information fields
-   2. Verify field labels match contact information type
-   3. Document confidence score and reasoning for each match
-
-### 6. Role-Specific Information (CRITICAL)
-
-* **ORGANIZER DETAILS**:
-   * Name source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name`
-   * Match fields labeled "Organizer Name", "Organizer Phone", "Organizer Email"
-   * Match fields labeled "Inc_Email_Address", "Inc_Contact_No" for incorporator
-
-* **INCORPORATOR DETAILS**:
-   * Name source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Incorporator_Information.Incorporator_Details.Inc_Name`
-   * Match all fields related to incorporator with 100% confidence
-
-* **GOVERNOR DETAILS**:
-   * Name source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Name`
-   * Address source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Address`
-
-### 7. Business Details (CRITICAL)
-
-* **BUSINESS PURPOSE**:
-   * Match fields requesting business purpose to corresponding JSON field
-   * Verify semantic match between field label and JSON field name
-
-* **NAICS INFORMATION**:
-   * NAICS Code: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Code`
-   * NAICS Subcode: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Subcode`
-   * Verify exact field labels match NAICS purpose
-
-* **STOCK DETAILS**:
-   * Number of shares: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Stock_Information.SI_Number_of_Shares`
-   * Shares par value: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Stock_Information.Shares_Par_Value`
-   * Default share type to "common" when required
-
-### 8. Filing Information (CRITICAL)
-
-* **FILING DETAILS VALIDATION**:
-   * Filing date: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Filing_Details.Filing_Date`
-   * Filing type: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Filing_Details.Filing_Type`
-   * "Filed by" fields: Always populate with "vState Filings" when present
-
-### 9. Checkboxes and Selections (CRITICAL)
-
-* **CHECKBOX VALIDATION PROTOCOL**:
-   1. Identify ALL checkboxes requiring selection
-   2. Map each checkbox to relevant JSON data
-   3. Document explicit reasoning for each checkbox selection
-   4. ALWAYS select commercial registered agent checkbox when applicable
-   5. Verify logical consistency of checkbox selections
-
-## FINAL VERIFICATION PROTOCOL
-
-Before submitting final field matches:
-
-1. Perform complete document scan for missed fields
-2. Verify entity name population in ALL instances
-3. Verify registered agent information accuracy
-4. Verify address field population accuracy
-5. Verify contact information accuracy
-6. Verify all role-specific information
-7. Document total field count and population percentage
-8. Highlight any fields intentionally left blank due to confidence issues
-
-## Input Data:
-
-* **JSON DATA:**
-    {json_data}
-* **PDF FORM FIELDS (with UUIDs):**
-    {pdf_fields}
-* **OCR TEXT ELEMENTS:**
-    {ocr_elements}
-* **FIELD CONTEXT (NEARBY TEXT):**
-    {field_context}
-
-## Output Format:
-
-
-{{
-  "matches": [
-    {{
-      "json_field": "field.name.in.json",
-      "pdf_field": "uuid_of_pdf_field",
-      "confidence": 0.98,
-      "suggested_value": "Value to fill",
-      "reasoning": "Detailed explanation of match confidence and validation steps performed"
-    }}
-  ],
-  "ocr_matches": [
-    {{
-      "json_field": "field.name.in.json",
-      "ocr_text": "Extracted text from OCR",
-      "pdf_field": "uuid_of_pdf_field",
-      "confidence": 0.97,
-      "suggested_value": "Value to annotate",
-      "reasoning": "Detailed explanation of OCR text match and validation steps"
-    }}
-  ],
-  "verification_summary": {{
-    "total_fields_detected": 42,
-    "total_fields_populated": 40,
-    "fields_intentionally_skipped": 2,
-    "entity_name_fields_detected": 5,
-    "entity_name_fields_populated": 5,
-    "registered_agent_type": "commercial",
-    "verification_steps_completed": ["entity_name_scan", "agent_type_determination", "address_validation", "contact_validation"]
-  }}
-}}
-```
-
-"""
 
 FIELD_MATCHING_PROMPT_UPDATED1="""
 
 
-You are an expert PDF form filling agent. Your task is to accurately populate PDF forms using data extracted from a provided JSON object. Your primary objective is to achieve maximum field coverage with the highest possible accuracy.
-All fields mentioned below are strictly critical and should be filled without being neglected. Give special attention to all the fields marked strictly critical as they are important and need to be filled without missing.
+# CRITICAL MULTI-SECTION PDF FORM POPULATION PROTOCOL 🚨
+# Adaptive Form Population Protocol for Name Fields
 
-## Action:
+## Core Population Strategy
 
-### 1. Data Matching and Population:
-* Establish precise correspondences between fields in the JSON data and fields in the PDF form.
-    * Give special attention to all the fields marked strictly critical as they are important and need to be filled without missing.
-* Utilize semantic similarity to match fields, even with differing names (e.g., "Company Name" to "Entity Name") (Strictly Critical).
-* Analyze surrounding text in the PDF (field context) to understand the intended purpose of each field.
-* Prioritize accuracy over completeness. Do not populate a field if you are uncertain of the match.
-* Aim for 100% field coverage, but only with high confidence matches.
-* Maintain consistency in data formats (dates, phone numbers, addresses) during data transfer.
-* Select appropriate options for checkboxes and radio buttons based on JSON data and field context.
-* Match UUIDs accurately based on context.
-* Do not populate the fields if there is no 100% match even if the field looks identical (strictly critical).
-* Fetch phone and contact information directly from the JSON.
-* Accurately check the checkbox whenever necessary.
-* Carefully match OCR text to PDF fields, using "likely_purpose" keywords and semantic similarity.
-* Do not populate any field if you lack confidence in the match.
-* Adjust the size of the form as per the length of the field to be filled in.
-* If the text won't fit in the field, then reduce the font size of the text to the field size and adjust the font size (STRICTLY EXTREMELY CRITICAL).
+### 
 
-### ### ### 2. Entity Name Fields (STRICTLY CRITICAL - ABSOLUTE TOP PRIORITY):
-* **⚠️ CRITICAL ALERT: ENTITY NAME FIELD DUPLICATION ISSUE ⚠️**
-* **PROBLEM: The agent is inconsistently filling entity name fields when they appear in multiple places**
-* **REQUIRED ACTION: You MUST identify and populate EVERY SINGLE INSTANCE of entity name fields**
 
-* **MANDATORY MULTI-STEP VERIFICATION PROCESS:**
-  1. Before starting form population, identify EVERY field in the PDF that could contain the entity name
-  2. Create a numbered list of all these fields with their UUIDs
-  3. Mark each field as you populate it
-  4. Before submission, verify every field on your list has been populated
+if the pdf field asks for effective date of filing then put in current date (strictly critical)
 
-* Entity name must be populated in:
-  - **ALL** fields labeled with "Entity Name", "LLC Name", "Corporation Name", "Business Name"
-  - **ALL** fields in signature/certification sections requiring entity name with value `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation_LLC_Name`
-  - **ALL** fields in headers/footers requiring entity name use the value for entity name `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Alternate_LLC_Name`
-  - **ALL** fields in registered agent sections requiring entity name use the value for entity name `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Alternate_LLC_Name`
-  - **ALL** fields in organizer/incorporator declaration sections requiring entity name use this value for entity name `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Alternate_LLC_Name`
-  - **ANY** field that requires the company's official name
+### 3. Validation Checks
+- Verify name population meets 85% confidence threshold
+- Confirm no data truncation
+- Ensure semantic accuracy
 
-* Extract the entity name from:
-  - For LLCs: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
-  - For Corporations: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name` or `Corp_Name`
-  - Generic: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+### 4. Special Handling Scenarios
+- Professional/Academic Titles
+- Name Suffixes (Jr., Sr., III)
+- Hyphenated Names
+- Names with Apostrophes or Special Characters
 
-* **CRITICAL CONSISTENCY CHECK:**
-  - After completing all fields, perform a second scan of the entire document
-  - Search specifically for empty fields that might contain terms like "name", "entity", "LLC", "company"
-  - Count the total number of entity name fields you've populated
-  - If you've only populated one entity name field, STOP and re-examine the document for missed fields
+### ### ### 2. Entity Name Fields (EXTREME PRIORITY ALERT - MUST FIX IMMEDIATELY):
+
+**🚨 CRITICAL SYSTEM FAILURE ALERT: ENTITY NAME POPULATION 🚨**
+**🚨 ALL PREVIOUS APPROACHES HAVE FAILED - THIS IS A SEVERE ISSUE 🚨**
+
+**THE PROBLEM:**
+- The agent is CONSISTENTLY FAILING to populate entity name in multiple required locations
+- The agent is only filling ONE entity name field when multiple fields require identical population
+- This is causing COMPLETE FORM REJECTION by government agencies
+
+**MANDATORY REQUIREMENTS - NON-NEGOTIABLE:**
+
+1. **IDENTIFY ALL ENTITY NAME FIELDS:**
+   - Search the ENTIRE document for ANY field that could hold an entity name
+   - This includes fields labeled: Entity Name, LLC Name, Company Name, Corporation Name, Business Name
+   - This includes ANY field in registration sections, certification sections, or signature blocks requiring the entity name
+   - This includes ANY field in article sections requiring entity name
+   - COUNT THESE FIELDS and list them by UUID
+
+2. **POPULATION PROCEDURE - EXTREME ATTENTION REQUIRED:**
+   - COPY THE EXACT SAME entity name to EVERY identified field
+   - DO NOT SKIP ANY entity name field for ANY reason
+   - After populating, CHECK EACH FIELD again to verify population
+   - VERIFY THE COUNT matches your initial entity name field count
+
+3. **CRITICAL VERIFICATION STEPS - MUST PERFORM:**
+   - After initial population, SCAN THE ENTIRE DOCUMENT AGAIN
+   - Look for ANY unpopulated field that might need the entity name
+   - If found, ADD TO YOUR LIST and populate immediately
+   - Double-check ALL headers, footers, and marginalia for entity name fields
+   - Triple-check signature blocks, certification statements for entity name fields
+
+4. **NO EXCEPTIONS PERMITTED:**
+   - If you only populated ONE entity name field, YOU HAVE FAILED this task
+   - You MUST populate EVERY instance where the entity name is required
+   - MINIMUM acceptable count of populated entity name fields is 2 or more
+
+5. **FINAL VERIFICATION STATEMENT REQUIRED:**
+   - You MUST include: "I have populated the entity name in X different locations (UUIDs: list them all)"
+   - You MUST include: "I have verified NO entity name fields were missed"
+   - You MUST include: "All entity name fields contain exactly the same value"
+
+**EXTRACTION SOURCE (ENTITY NAME):**
+- For LLCs: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
+- For Corporations: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name` or `Corp_Name`
+- Generic path: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+
+**FINAL WARNING:**
+- This is the MOST CRITICAL part of form population
+- Government agencies REJECT forms with inconsistent entity names
+- Multiple instances of the entity name MUST match exactly
+- No exceptions, no exclusions, no oversights permitted
 
 * **FINAL VERIFICATION:**
   - In your reasoning, explicitly state: "I have verified that ALL entity name fields (total count: X) have been populated with the identical value"
-### 3. 3. Registered Agent Information (STRICTLY EXTREMELY CRITICAL):
+### 3. Registered Agent Information (Critical):
 * This section is of utmost importance. Handle with extreme care.
-* **⚠️ CRITICAL ERROR ALERT: REGISTERED AGENT ADDRESS MISPLACEMENT ⚠️**
-* **PROBLEM: The agent is incorrectly placing registered agent address information in the agent name field**
-* **REQUIRED ACTION: You MUST separate registered agent NAME and ADDRESS into their respective dedicated fields**
-
-* **MANDATORY FIELD SEPARATION RULES:**
-  1. Registered Agent NAME field should ONLY contain the agent's name - NEVER any address information
-  2. Registered Agent ADDRESS fields should ONLY contain address information - NEVER the agent's name
-  3. ALWAYS identify separate fields for:
-     - Registered Agent Name
-     - Registered Agent Address Line 1
-     - Registered Agent Address Line 2 (if available)
-     - Registered Agent City
-     - Registered Agent State
-     - Registered Agent ZIP
-
+    * If the registered agent is an entity, select the checkbox or tick the checkbox compulsorily (STRICTLY EXTREMELY CRITICAL).
 * Determine the agent type (individual or entity) by examining `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`.
 * Individual agents have first and last names without corporate identifiers.
 * Entity/commercial agents contain identifiers like "Inc," "LLC," "Corp," "Company."
@@ -1486,112 +1414,215 @@ All fields mentioned below are strictly critical and should be filled without be
 * Fill individual agent checkboxes or radio buttons.
 * For entities/commercial agents, use `RA_Name` for "Commercial Registered Agent," "Entity Registered Agent," "Name of Registered Agent Company," etc.
 * Fill commercial/entity agent checkboxes or radio buttons.
+* Correctly identify and fill address fields. Do not fill addresses into the agent's name field.
+* Use `RA_Name` ONLY for the registered agent's name.
+*### ### ADDRESS MATCHING INSTRUCTIONS FOR AI
 
-* **REGISTERED AGENT ADDRESS FIELDS (STRICTLY CRITICAL):**
-  - Match "Registered Agent Address" fields to `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_Address_Line_1`
-  - Match "Registered Agent City" to `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_City`
-  - Match "Registered Agent State" to `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_State`
-  - Match "Registered Agent ZIP" to `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_Zip_Code`
-  - NEVER include address information in the agent name field
-  - NEVER include agent name in the address fields
+CRITICAL DIRECTIVE: Implement ABSOLUTE PRECISION in address field mapping
 
-* **VERIFICATION STEP FOR REGISTERED AGENT FIELDS:**
-  - After filling registered agent information, verify:
-    1. Agent NAME field contains ONLY the agent's name
-    2. Agent ADDRESS fields contain ONLY address components
-    3. Both sets of information are complete and in their correct fields
+1. ADDRESS COMPONENT SEPARATION:
+   - MANDATORY: Separate street, city, state, ZIP into DISTINCT fields
+   - NEVER insert full address into a single field
+   - STRICTLY map each component to its dedicated field
 
-* If the registered agent is commercial/entity, check the corresponding checkbox (strictly critical).
+2. FIELD-SPECIFIC MAPPING RULES:
+   - STREET ADDRESS: 
+     * Numeric street number + street name
+     * NO city, state, ZIP
+   
+   - CITY: 
+     * City name ONLY
+     * NO additional descriptors
+   
+   - STATE: 
+     * TWO-LETTER ABBREVIATION
+     * Uppercase (e.g., "CA", "NY")
+   
+   - ZIP CODE:
+     * 5-digit format
+     * Optional 4-digit extension
+
+3. VALIDATION CONSTRAINTS:
+   - REJECT any match that:
+     * Mixes address components
+     * Inserts address in name fields
+     * Provides incomplete or incorrect segments
+
+ 
+
+ABSOLUTE RULE: 
+- ZERO TOLERANCE for address component mixing
+- 100% PRECISE, FIELD-SPECIFIC MAPPING
+
+2. REGISTERED AGENT NAME HANDLING:
+   - Use `RA_Name` EXCLUSIVELY for the agent's name field
+   - DISTINGUISH between individual and commercial agents:
+     * Individual Agent: First and Last Name ONLY
+     * Commercial Agent: Full legal entity name (e.g., "XYZ Corporation", "Smith LLC")
+
+3. AGENT TYPE IDENTIFICATION:
+   - Check for corporate identifiers: 
+     * Triggers COMMERCIAL/ENTITY agent: "Inc", "LLC", "Corp", "Company"
+     * Triggers INDIVIDUAL agent: Standard personal names
+
+4. CHECKBOX/RADIO BUTTON SELECTION:
+   - MANDATORY: Select appropriate agent type checkbox
+     * Individual Registered Agent checkbox
+     * Commercial/Entity Registered Agent checkbox
+
+5. STRICT VALIDATION CRITERIA:
+   - REJECT matches that:
+     * Place address in name fields
+     * Mix address components
+     * Fail to distinguish agent type
+     * Omit required type selection
+
+CRITICAL EXAMPLE SCENARIOS:
+- Individual: "John Smith" → Individual Registered Agent
+- Commercial: "Tech Solutions LLC" → Commercial Registered Agent
+- NEVER: "123 Main St" in name field
+- NEVER: Mix city/state in name field
+
+ABSOLUTE REQUIREMENT: 
+- Precise, granular mapping of EACH address component
+- 100% separation of name and address information
 
 
-### 4. Principal Address (Critical):
-* Ensure accurate principal address fields.
-* Match "Initial Street Address of Principal Office - Do not enter a P" to `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1`.
-* Match address components (street, city, state, zip) to their respective JSON fields.
 
-### 5. Organizer Details (Strictly Critical):
-* Get the organizer name from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name`.
-* Match organizer address components to corresponding JSON fields.
-* Match fields like "Organizer Name", "Organizer Phone", "Organizer Email", "Inc_Email_Address", "Inc_Contact_No".
+## 4. 🚨 ORGANIZER DETAILS POPULATION
 
-### 6. Business Purpose (Strictly Critical):
-* If the PDF requests a business purpose, accurately fill it from the JSON.
+### Extraction Sources:
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name`
+- Phone: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Phone`
+- Email: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Email`
 
-### 7. Signature & Organizer Information (Strictly Critical):
-* Match "Organizer Name" and "Authorized Signature" to `Organizer_Information.Org_Name`.
+### Matching Strategies:
+- SEMANTIC FIELD DETECTION
+- MULTI-FIELD POPULATION
+- CONTACT INFORMATION VERIFICATION
 
-### 8. "Registered Agent" Fields (Strictly Critical):
-* Pay close attention to fields related to "registered agent," "agent name," or similar.
-* If the registered agent is commercial then check the checkbox for it (strictly critical).
-* Fill the registered agent address in the address field only - don't fill it in registered agent field. Adjust the font as per the PDF field (strictly critical).
-### 9. Contact Information (STRICTLY CRITICAL - HIGH PRIORITY):
-* **⚠️ CRITICAL ALERT: CONTACT INFORMATION FIELD DUPLICATION ISSUE ⚠️**
-* **PROBLEM: The agent is inconsistently filling contact information fields when they appear in multiple places**
-* **REQUIRED ACTION: You MUST identify and populate EVERY SINGLE INSTANCE of contact information fields**
+## 5. 🚨 CONTACT INFORMATION PROTOCOL
 
-* **MANDATORY MULTI-STEP VERIFICATION PROCESS:**
-  1. Before starting form population, identify EVERY field in the PDF that could contain contact information
-  2. Create a numbered list of all these fields with their UUIDs
-  3. Mark each field as you populate it
-  4. Before submission, verify every field on your list has been populated
+### Extraction Sources:
+- First Name: `data.contactDetails.firstName`
+- Last Name: `data.contactDetails.lastName`
+add then First Name and LastName together if asked for contact name dont omit the first name or last name adjust them in one field as per the pdf field.
 
-* Contact information must be populated in:
-  - **ALL** fields labeled with "Contact Name", "Contact Person", "LLC Contact Name", "Name of Contact", "Return To", "Return Information", etc.
-  - **ALL** fields labeled with "Contact Email", "Email Address", "Return Email", "LLC Contact Email", etc.
-  - **ALL** fields labeled with "Contact Phone", "Phone Number", "Telephone", "LLC Contact Phone", etc.
-  - **ALL** fields labeled with "Contact Address", "Return Address", "LLC Contact Address", etc.
-  - **ALL** fields in sections requiring contact information for return/confirmation purposes
-  - **ANY** field that requires contact details for notification or communication purposes
+- Email: `data.contactDetails.emailId`
+- Phone: `data.contactDetails.phoneNumber`
+- Contact `data.contactDetails.phoneNumber`
 
-* Extract the contact information from:
-  - Contact Name: Combine `data.contactDetails.firstName` and `data.contactDetails.lastName`
-  - Contact Email: `data.contactDetails.emailId`
-  - Contact Phone: `data.contactDetails.phone` or the appropriate phone field
-  - Contact Address: Use the principal address from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address`
+### Matching Strategies:
+- FULL NAME CONSTRUCTION
+- CONTACT METHOD POPULATION
+- SEMANTIC FIELD MATCHING
 
-* **CRITICAL CONSISTENCY CHECK:**
-  - After completing all fields, perform a second scan of the entire document
-  - Search specifically for empty fields that might contain terms like "contact", "phone", "email", "return to", "attention"
-  - Count the total number of contact information fields you've populated
-  - If any contact field remains empty, STOP and re-examine the document for missed fields
-  - Ensure consistency across all instances (same name, email, phone number used throughout)
+## 6. 🚨 STOCK DETAILS POPULATION
 
-* **FINAL VERIFICATION:**
-  - In your reasoning, explicitly state: "I have verified that ALL contact information fields (total count: X) have been populated with consistent values"
-  - Confirm that name, email, phone, and address fields are all properly filled where required
+### Extraction Sources:
+- Number of Shares: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.SI_Number_of_Shares`
+- Shares Par Value: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Shares_Par_Value`
 
-This updated section follows the same strict formatting and verification process as the Entity Name section, creating a more rigorous approach to ensuring all contact information fields are properly identified and filled.
-### 10. Stock Details (Strictly Critical):
-* If the PDF asks for the number of shares or shares par value, then fill the value for the number of shares. Select `SI_Number_of_Shares` and `Shares_Par_Value` or similar values from the JSON.
-* If the PDF fields ask for the type of shares, then select "common."
+### Matching Strategies:
+- DEFAULT TO "COMMON" SHARES
+- NUMERIC FIELD POPULATION
+- VERIFICATION OF NUMERIC CONSTRAINTS
 
-### 11. Spelling Errors:
-* Match fields semantically, even if the PDF contains spelling errors.
+## 7. 🚨 NAICS CODE POPULATION
 
-### 12. NAICS Code and NAICS Subcode (Strictly Critical):
-* If the PDF requests a NAICS code or subcode, extract the values from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Code` and `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Subcode`, respectively.
-* Fill these values into the corresponding NAICS code and subcode fields in the PDF.
+### Extraction Sources:
+- NAICS Code: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Code`
+- NAICS Subcode: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Subcode`
 
-### 13. Governor Details (Strictly Critical):
-* If the PDF requests governor details, extract the governor's name from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Name`.
-* Extract the governor's address from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Address.Governor_Address_Line_1`, `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Address.Governor_City`, `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Address.Governor_State`, and `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Address.Governor_Address.Governor_Zip_Code`.
-* Fill these values into the corresponding governor name and address fields in the PDF.
+### Matching Strategies:
+- PRECISE CODE MATCHING
+- SUBCODE POPULATION
+- FORMATTING VERIFICATION
 
-### 14. Filing Details (Strictly Critical):
-* If the PDF requests filing details, extract the filing date from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Filing_Details.Filing_Date`.
-* Extract the filing type from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Filing_Details.Filing_Type`.
-* Fill these values into the corresponding filing date and filing type fields in the PDF.
-* If the PDF says about or has the term "the document is filed by" then extract the name of the filer and fill in the name "vState Filings" in the filed by section.
+## 8. 🚨 GOVERNOR DETAILS POPULATION
 
-### 15. Incorporator Details (Strictly Critical):
-* Get the Incorporator name from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Incorporator_Information.Incorporator_Details.Inc_Name` or relevant.
-* Match Incorporator address components to corresponding JSON fields.
-* Match fields like "Incorporator Name", "Incorporator Phone", "Incorporator Email", "Inc_Email_Address", "Inc_Contact_No".
+### Extraction Sources:
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Name`
+- Address: 
+  * Line 1: `Governor_Address.Governor_Address_Line_1`
+  * City: `Governor_Address.Governor_City`
+  * State: `Governor_Address.Governor_State`
+  * Zip: `Governor_Address.Governor_Zip_Code`
 
-### 16. Checkboxes (Strictly Critical):
-* If we need to select the checkbox for commercial registered agent, select it.
-* Select the relevant check boxes whenever required.
+### Matching Strategies:
+- COMPREHENSIVE POPULATION
+- ADDRESS COMPONENT SEPARATION
+- VERIFICATION OF ALL FIELDS
 
+
+9. AGENT TYPE IDENTIFICATION
+Determination Criteria:
+
+Source: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name
+
+INDIVIDUAL AGENT IDENTIFICATION:
+
+First and last names WITHOUT corporate identifiers
+POPULATE individual agent checkbox/radio button
+Use for fields: "Individual Registered Agent", "Registered Agent Name"
+
+ENTITY/COMMERCIAL AGENT IDENTIFICATION:
+
+Names containing: "Inc", "LLC", "Corp", "Company"
+POPULATE commercial agent checkbox/radio button
+Use for fields: "Commercial Registered Agent", "Entity Registered Agent"
+
+ADDRESS POPULATION RULES
+1. Physical Location (Critical)
+
+MANDATORY: Physical Location or Physical Street Address. 
+SOURCE: Registered_Agent.RA_Address.RA_Address_Line1 (complete address of registered agent) 
+
+VALIDATION CHECKS:
+
+
+
+2.MAILING ADDRESS
+
+SOURCE: Registered_Agent.RA_Address.Mailing_Address
+MANDATORY STATE: CT
+P.O. Box ACCEPTABLE
+Complete address required
+
+3. RESIDENCE ADDRESS
+
+SOURCE: Registered_Agent.RA_Address.Residence_Address
+STRICTLY physical address
+NO P.O. Box ALLOWED
+
+CRITICAL POPULATION GUIDELINES
+
+USE RA_Name EXCLUSIVELY for agent's name
+ZERO address information in name field
+ABSOLUTE address component separation
+MANDATORY signature in "Signature accepting a
+
+## 10. 🚨 FILING DETAILS POPULATION
+
+### Extraction Sources:
+- Filing Date: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Filing_Details.Filing_Date`
+- Filing Type: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Filing_Details.Filing_Type`
+
+### Matching Strategies:
+- DATE FORMATTING
+- TYPE POPULATION
+- FILER IDENTIFICATION
+
+## 11. 🚨 INCORPORATOR DETAILS
+
+### Extraction Sources:
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Incorporator_Information.Incorporator_Details.Inc_Name`
+- Phone: `Incorporator_Details.Inc_Contact_No`
+- Email: `Incorporator_Details.Inc_Email_Address`
+
+### Matching Strategies:
+- MULTI-FIELD POPULATION
+- CONTACT INFORMATION VERIFICATION
 ## Input Data:
 
 * **JSON DATA:**

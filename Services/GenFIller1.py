@@ -3,6 +3,7 @@ import json
 import os
 import re
 import shutil
+import hashlib
 from typing import Dict, Any, List, Tuple
 
 import fitz
@@ -17,7 +18,6 @@ from pydantic_ai import Agent
 from pydantic_ai.models.gemini import GeminiModel
 from pydantic import BaseModel, field_validator
 
-from Common.constants import *
 
 API_KEYS = {
     "field_matcher": API_KEY_3,
@@ -58,7 +58,7 @@ class OCRFieldMatch(BaseModel):
     x2: float
     y2: float
     confidence: float
-    pdf_field:str
+    pdf_field: str
     suggested_value: Any
     reasoning: str
 
@@ -77,15 +77,23 @@ class MultiAgentFormFiller:
         )
 
         self.ocr_reader = PaddleOCR(use_angle_cls=True, lang='en')
-
         self.matched_fields = {}
 
-    async def extract_pdf_fields(self, pdf_path: str) -> Dict[str, Dict[str, Any]]:
-        """Extracts all fillable fields from a multi-page PDF with additional metadata."""
-        print("🔍 Extracting all fillable fields...")
-        doc = fitz.open(pdf_path)
-        fields = {}
+    def extract_template_info(self, pdf_path: str) -> Dict[str, Any]:
+        """
+        Extract comprehensive template information including fields and OCR text.
 
+        Args:
+            pdf_path (str): Path to the PDF template
+
+        Returns:
+            Dict[str, Any]: Extracted template information
+        """
+        print(f"🔍 Extracting template information for: {pdf_path}")
+        doc = fitz.open(pdf_path)
+
+        # Extract fillable fields
+        fields = {}
         for page_num, page in enumerate(doc, start=0):
             for widget in page.widgets():
                 if widget.field_name:
@@ -103,22 +111,11 @@ class MultiAgentFormFiller:
                         "current_value": widget.field_value
                     }
 
-        print(f"✅ Extracted {len(fields)} fields across {len(doc)} pages.")
-        for field, info in fields.items():
-            readonly_status = "READ-ONLY" if info["is_readonly"] else "EDITABLE"
-            print(f" - Field: '{field}' (Page {info['page_num'] + 1}) [{readonly_status}]")
-
-        doc.close()
-        return fields
-
-    async def extract_ocr_text(self, pdf_path: str) -> List[Dict[str, Any]]:
-        """Extract text from PDF using OCR with position information."""
-        print("🔍 Extracting text using OCR...")
-        doc = fitz.open(pdf_path)
+        # Extract OCR text
         ocr_results = []
+        ocr_reader = PaddleOCR(use_angle_cls=True, lang='en')
 
         for page_num in range(len(doc)):
-            print(f"Processing OCR for page {page_num + 1}/{len(doc)}...")
             pix = doc[page_num].get_pixmap(alpha=False)
             img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)
 
@@ -126,19 +123,10 @@ class MultiAgentFormFiller:
                 img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
 
             gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
             binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                            cv2.THRESH_BINARY_INV, 11, 2)
 
-
-            results = self.ocr_reader.ocr(binary, cls=True)
-
-            if not results[0]:
-                _, threshold = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY_INV)
-                additional_results = self.ocr_reader.ocr(threshold, cls=True)
-
-                if additional_results[0]:
-                    results = additional_results
+            results = ocr_reader.ocr(binary, cls=True)
 
             if results[0]:
                 unique_results = []
@@ -156,7 +144,6 @@ class MultiAgentFormFiller:
                     if prob < 0.4 or not text.strip():
                         continue
 
-                    # PaddleOCR format: [[x1,y1], [x2,y1], [x2,y2], [x1,y2]]
                     x1, y1 = bbox[0]
                     x2, y2 = bbox[2]
 
@@ -177,6 +164,39 @@ class MultiAgentFormFiller:
                     })
 
         doc.close()
+
+        template_info = {
+            "pdf_path": pdf_path,
+            "pdf_fields": fields,
+            "ocr_text_elements": ocr_results
+        }
+
+        print(f"✅ Extracted {len(fields)} fields and {len(ocr_results)} OCR elements")
+        return template_info
+
+    async def extract_pdf_fields(self, pdf_path: str) -> Dict[str, Dict[str, Any]]:
+        """Extracts all fillable fields from a multi-page PDF with additional metadata."""
+        print("🔍 Extracting all fillable fields...")
+
+        # Extract template information
+        template_info = self.extract_template_info(pdf_path)
+        pdf_fields = template_info['pdf_fields']
+
+        print(f"✅ Extracted {len(pdf_fields)} fields.")
+        for field, info in pdf_fields.items():
+            readonly_status = "READ-ONLY" if info["is_readonly"] else "EDITABLE"
+            print(f" - Field: '{field}' (Page {info['page_num'] + 1}) [{readonly_status}]")
+
+        return pdf_fields
+
+    async def extract_ocr_text(self, pdf_path: str) -> List[Dict[str, Any]]:
+        """Extract text from PDF using OCR."""
+        print("🔍 Extracting text using OCR...")
+
+        # Extract template information
+        template_info = self.extract_template_info(pdf_path)
+        ocr_results = template_info['ocr_text_elements']
+
         print(f"✅ Extracted {len(ocr_results)} text elements using OCR.")
         return ocr_results
 
@@ -191,14 +211,14 @@ class MultiAgentFormFiller:
         pdf_fields = await self.extract_pdf_fields(pdf_path)
         ocr_text_elements = await self.extract_ocr_text(pdf_path)
         flat_json = self.flatten_json(json_data)
-        field_context = self.analyze_field_context(pdf_fields, ocr_text_elements)
+        field_context = await self.analyze_field_context(pdf_fields, ocr_text_elements)
 
         # Print available JSON fields for debugging
         print("Available JSON fields:")
         for key in flat_json.keys():
             print(f" - {key}: {flat_json[key]}")
 
-        prompt = FIELD_MATCHING_PROMPT_UPDATED.format(
+        prompt = FIELD_MATCHING_PROMPT_UPDATED1.format(
             json_data=json.dumps(flat_json, indent=2, cls=NumpyEncoder),
             pdf_fields=json.dumps([{"uuid": k, "info": v} for k, v in pdf_fields.items()], indent=2, cls=NumpyEncoder),
             ocr_elements=json.dumps(ocr_text_elements, indent=2, cls=NumpyEncoder),
@@ -261,92 +281,120 @@ class MultiAgentFormFiller:
                 print(f"❌ Alternative save also failed: {e2}")
                 return False
 
-    def analyze_field_context(self, pdf_fields: Dict[str, Dict[str, Any]],
+    async def analyze_field_context(self, pdf_fields: Dict[str, Dict[str, Any]],
                               ocr_elements: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Analyze context around form fields to improve field understanding."""
+        """
+        Analyze context around form fields using an AI-powered approach for improved understanding.
+
+        Args:
+            pdf_fields (Dict[str, Dict[str, Any]]): Dictionary of PDF form fields
+            ocr_elements (List[Dict[str, Any]]): List of OCR text elements
+
+        Returns:
+            List[Dict[str, Any]]: Enhanced context for each form field
+        """
         field_context = []
 
-        for field_name, field_info in pdf_fields.items():
-            page_num = field_info["page_num"]
-            rect = field_info["rect"]
+        # Prepare context data for AI analysis
+        context_data = {
+            "pdf_fields": [],
+            "ocr_elements": []
+        }
 
+        # Process PDF fields
+        for field_name, field_info in pdf_fields.items():
+            field_context_entry = {
+                "field_name": field_name,
+                "page": field_info["page_num"] + 1,
+                "rect": field_info["rect"],
+                "nearby_elements": []
+            }
+
+            # Find nearby OCR text elements
             nearby_text = []
             for ocr_elem in ocr_elements:
-                if ocr_elem["page_num"] != page_num:
+                if ocr_elem["page_num"] != field_info["page_num"]:
                     continue
 
                 ocr_pos = ocr_elem["position"]
 
-                distance_x = abs(rect[0] - ocr_pos["x2"])
-                distance_y = abs(rect[1] - ocr_pos["y2"])
+                # Proximity calculation with more advanced logic
+                horizontal_proximity = abs(field_info["rect"][0] - ocr_pos["x2"])
+                vertical_proximity = abs(field_info["rect"][1] - ocr_pos["y2"])
 
-                if (ocr_pos["x2"] < rect[0] and distance_x < 200 and abs(rect[1] - ocr_pos["y1"]) < 30) or \
-                        (ocr_pos["y2"] < rect[1] and distance_y < 50 and abs(rect[0] - ocr_pos["x1"]) < 200):
+                # More sophisticated proximity conditions
+                is_nearby = (
+                        (ocr_pos["x2"] < field_info["rect"][0] and horizontal_proximity < 250 and
+                         abs(field_info["rect"][1] - ocr_pos["y1"]) < 50) or
+                        (ocr_pos["y2"] < field_info["rect"][1] and vertical_proximity < 100 and
+                         abs(field_info["rect"][0] - ocr_pos["x1"]) < 250)
+                )
+
+                if is_nearby:
                     nearby_text.append({
                         "text": ocr_elem["text"],
-                        "distance_x": distance_x,
-                        "distance_y": distance_y,
-                        "position": "left" if ocr_pos["x2"] < rect[0] else "above"
+                        "position": {
+                            "x1": ocr_pos["x1"],
+                            "y1": ocr_pos["y1"],
+                            "x2": ocr_pos["x2"],
+                            "y2": ocr_pos["y2"]
+                        },
+                        "horizontal_distance": horizontal_proximity,
+                        "vertical_distance": vertical_proximity
                     })
 
-            nearby_text.sort(key=lambda x: x["distance_x"] + x["distance_y"])
+            # Sort nearby text by combined proximity
+            nearby_text.sort(key=lambda x: x["horizontal_distance"] + x["vertical_distance"])
+            field_context_entry["nearby_elements"] = nearby_text[:5]  # Keep top 5 nearby elements
 
-            field_context.append({
+            # Prepare context for AI analysis
+            context_data["pdf_fields"].append({
                 "field_name": field_name,
-                "page": page_num + 1,
-                "nearby_text": nearby_text[:3]
+                "page": field_info["page_num"] + 1,
+                "rect": field_info["rect"]
             })
+            context_data["ocr_elements"].extend(nearby_text)
+
+        # If AI agent is available, enhance context further
+        try:
+            context_prompt = f"""
+            Analyze the following PDF form field context:
+
+            PDF Fields: {json.dumps(context_data['pdf_fields'], indent=2)}
+
+            Nearby OCR Text Elements: {json.dumps(context_data['ocr_elements'], indent=2)}
+
+            For each PDF field, provide:
+            1. Likely field type/purpose
+            2. Potential default or expected value
+            3. Any suggestions for field interpretation
+
+            Respond in a structured JSON format with detailed insights.
+            """
+
+            # Use the existing AI agent to get enhanced context
+            response = await self.agent.run(context_prompt)
+
+            # Parse AI response and integrate additional insights
+            ai_context = json.loads(response.data)
+
+            # Merge AI insights with existing context
+            for field_context_entry in field_context:
+                field_name = field_context_entry["field_name"]
+                ai_field_insights = next((item for item in ai_context.get('field_insights', [])
+                                          if item.get('field_name') == field_name), None)
+
+                if ai_field_insights:
+                    field_context_entry.update({
+                        "ai_suggested_type": ai_field_insights.get('suggested_type'),
+                        "ai_suggested_value": ai_field_insights.get('suggested_value'),
+                        "ai_interpretation_notes": ai_field_insights.get('interpretation_notes')
+                    })
+
+        except Exception as e:
+            print(f"⚠️ AI context enhancement failed: {e}")
 
         return field_context
-
-    def create_label_field_map(self, ocr_elements: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
-        """Create a map of potential form labels to nearby fields."""
-        label_map = {}
-
-        by_page = {}
-        for elem in ocr_elements:
-            page = elem["page_num"]
-            if page not in by_page:
-                by_page[page] = []
-            by_page[page].append(elem)
-
-        for page, elements in by_page.items():
-
-            elements.sort(key=lambda x: x["position"]["y1"])
-
-            for i, elem in enumerate(elements):
-                if len(elem["text"]) > 30:
-                    continue
-
-                potential_fields = []
-                for j, other in enumerate(elements):
-                    if i == j:
-                        continue
-
-                    if (other["position"]["x1"] > elem["position"]["x2"] and
-                            abs(other["position"]["y1"] - elem["position"]["y1"]) < 20):
-                        potential_fields.append({
-                            "text": other["text"],
-                            "position": other["position"],
-                            "relation": "right",
-                            "distance": other["position"]["x1"] - elem["position"]["x2"]
-                        })
-
-                    elif (other["position"]["y1"] > elem["position"]["y2"] and
-                          abs(other["position"]["x1"] - elem["position"]["x1"]) < 40 and
-                          other["position"]["y1"] - elem["position"]["y2"] < 40):
-                        potential_fields.append({
-                            "text": other["text"],
-                            "position": other["position"],
-                            "relation": "below",
-                            "distance": other["position"]["y1"] - elem["position"]["y2"]
-                        })
-
-                if potential_fields:
-                    potential_fields.sort(key=lambda x: x["distance"])
-                    label_map[elem["text"]] = potential_fields[:2]
-
-        return label_map
 
     def parse_ai_response(self, response_text: str) -> Dict[str, List]:
         """Parses AI response and extracts valid JSON matches for both form fields and OCR text."""
@@ -458,101 +506,6 @@ class MultiAgentFormFiller:
                 doc.close()
                 return False
 
-    def fill_ocr_fields(self, pdf_path: str, ocr_matches: List[OCRFieldMatch],
-                        ocr_elements: List[Dict[str, Any]]) -> bool:
-        """Fills OCR-detected areas with text for readonly fields."""
-        doc = fitz.open(pdf_path)
-        annotations_added = 0
-
-        for match in ocr_matches:
-            if match.suggested_value is not None:
-                try:
-                    page = doc[match.page_num]
-
-                    position = None
-                    if match.ocr_text:
-                        position = self.find_text_position(match.ocr_text, ocr_elements, match.page_num)
-
-                    if position:
-                        x1, y1, x2, y2 = position["x1"], position["y1"], position["x2"], position["y2"]
-
-                        x1 = x2 + 10
-                        x2 = x1 + 150
-
-                        y2 = y1 + (y2 - y1)
-                    else:
-                        x1, y1, x2, y2 = match.x1, match.y1, match.x2, match.y2
-
-                    rect = fitz.Rect(x1, y1, x2, y2)
-
-                    print(
-                        f"✍️ Filling OCR field: '{match.suggested_value}' → near '{match.ocr_text}' (Page {match.page_num + 1})")
-
-                    annotation_added = False
-
-                    try:
-                        annot = page.add_freetext_annot(
-                            rect=rect,
-                            text=str(match.suggested_value),
-                            fontsize=10,
-                            fill_color=(0.95, 0.95, 0.95),
-                            text_color=(0, 0, 0)
-                        )
-                        annotations_added += 1
-                        annotation_added = True
-                    except Exception as e1:
-                        print(f"⚠️ Free text annotation failed: {e1}")
-
-                    if not annotation_added:
-                        try:
-                            page.draw_rect(rect, color=(0.95, 0.95, 0.95), fill=(0.95, 0.95, 0.95))
-
-                            page.insert_text(
-                                point=(x1 + 2, y1 + 10),
-                                text=str(match.suggested_value),
-                                fontsize=10
-                            )
-                            annotations_added += 1
-                            annotation_added = True
-                        except Exception as e2:
-                            print(f"⚠️ Text insertion failed: {e2}")
-
-                    if not annotation_added:
-                        try:
-                            annot = page.add_text_annot(
-                                point=(x1, y1),
-                                text=str(match.suggested_value)
-                            )
-                            annotations_added += 1
-                        except Exception as e3:
-                            print(f"⚠️ All text methods failed: {e3}")
-                except Exception as e:
-                    print(f"⚠️ Error processing OCR match: {e}")
-
-        if annotations_added > 0:
-            try:
-                # Remove incremental parameter to fix the error
-                doc.save(pdf_path, deflate=True, clean=True)
-                print(f"✅ Added {annotations_added} OCR text fields")
-                doc.close()
-                return True
-            except Exception as e:
-                print(f"❌ Error saving PDF with OCR annotations: {e}")
-                try:
-                    temp_path = f"{pdf_path}.temp"
-                    doc.save(temp_path)
-                    doc.close()
-                    shutil.move(temp_path, pdf_path)
-                    print(f"✅ Saved OCR annotations using alternative method")
-                    return True
-                except Exception as e2:
-                    print(f"❌ Alternative save method also failed: {e2}")
-                    doc.close()
-                    return False
-        else:
-            doc.close()
-            return False
-
     def find_text_position(self, text: str, ocr_elements: List[Dict[str, Any]], page_num: int) -> Dict[str, float]:
         """Find the position of a text element in the OCR results with improved fuzzy matching."""
         if not text or not ocr_elements:
@@ -660,7 +613,7 @@ class MultiAgentFormFiller:
 
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\Connecitcuit.pdf"
+    template_pdf = "D:\\demo\\Services\\Wisconsin.pdf"
     json_path = "D:\\demo\\Services\\form_data.json"
     output_pdf = "D:\\demo\\Services\\fill_smart5.pdf"
 

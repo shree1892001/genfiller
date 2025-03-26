@@ -34,7 +34,7 @@ def extract_text_from_image_pdf(pdf_path, dpi=300):
     return full_text
 
 def main():
-    pdf_path = "D:\\demo\\Services\\PennsylvaniaLLC_1.pdf.backup"  # Replace with your PDF path
+    pdf_path = "D:\\demo\\Services\\Connecitcuit.pdf"  # Replace with your PDF path
     extracted_text = extract_text_from_image_pdf(pdf_path)
 
     if extracted_text:
