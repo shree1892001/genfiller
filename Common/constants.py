@@ -678,12 +678,118 @@ IMPORTANT INSTRUCTIONS:
    - "Incorporator Phone"
    - "Incorporator Email"
 
-8. SIGNATURE & ORGANIZER INFORMATION:
-   - Match the following fields:
-     - "Organizer Name", "Authorized Signature"
-     - "Execution"
-     - If the form asks for "Signature" or "Organizer Sign" then add the Organizer name from the JSON value "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name"
-     - JSON field: "Organizer_Information.Org_Name"
+8. # Signature Field Handling Guidelines
+
+## Mandatory Signature Field Requirements
+
+### 1. Signature Field Prioritization
+- The signature field is CRITICALLY MANDATORY
+- MUST be filled with the Organizer's full name
+- No exceptions allowed for leaving the signature field blank
+
+### 2. Primary Source for Signature Name
+- SOURCE: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name`
+- If this field is missing or empty, REJECT the form processing
+
+### 3. Name Formatting for Signature
+- Use FULL name from the JSON source
+- Do NOT use partial names or abbreviations
+- Ensure name matches exactly as it appears in the source JSON
+
+### 4. Field Matching Criteria
+Signature fields to target:
+- "Signature"
+- "Authorized Signature"
+- "Organizer Signature"
+- "Name of Organizer"
+- "Execution"
+- Any field explicitly requesting a signature or name
+
+### 5. Strict Validation Rules
+- If signature field is present BUT not filled:
+  1. Immediately flag as REQUIRED
+  2. Block form submission
+  3. Require explicit Organizer name input
+
+### 6. Confidence and Matching
+- Matching Confidence: 0.99 (Highest possible)
+- Semantic matching priority
+- Exact string matching preferred
+ignature Field Filling Strategy
+Mandatory Signature Field Resolution
+Primary Signature Source
+
+Retrieve Organizer Name from:
+
+data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name
+
+
+
+Fallback Mechanisms
+If primary source is empty:
+
+Check alternative JSON paths:
+
+data.contactDetails.firstName + data.contactDetails.lastName
+data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Details.Org_Name
+
+
+
+Name Formatting Rules
+
+Combine first and last name if split
+Use full legal name
+Remove any extra whitespaces
+Ensure capitalization is proper
+
+Signature Field Matching Criteria
+Target fields including:
+
+"Signature"
+"Authorized Signature"
+"Organizer Signature"
+"Name"
+"Printed Name"
+"Signature Line"
+
+Validation Checklist
+✅ Name retrieved
+✅ Non-empty string
+✅ Proper formatting
+✅ Matches target signature field
+Strict Enforcement
+
+If NO name can be found after ALL fallback mechanisms:
+
+BLOCK form submission
+Generate detailed error report
+Request manual name input
+### 7. Error Handling
+- If no Organizer name found:
+  1. Halt form processing
+  2. Generate explicit error message
+  3. Request manual intervention
+
+## Example JSON Match Template
+
+{{
+    "matches": [
+        {{
+            "json_field": "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name",
+            "pdf_field": "Signature",
+            "confidence": 0.99,
+            "suggested_value": "<Full Organizer Name>",
+            "reasoning": "Mandatory signature field filled with exact Organizer name from source JSON"
+        }}
+    ]
+}}
+
+
+## Key Principles
+- ZERO TOLERANCE for missing signature
+- FULL name MUST be used
+- Exact source matching
+- Blocking submission if signature incomplete
 
 9. If the code asks for business purpose then fill it accurately by selecting the business purpose field from json.
 
@@ -1581,13 +1687,7 @@ ABSOLUTE RULE:
    - Use `RA_Name` EXCLUSIVELY for the agent's name field
    - DISTINGUISH between individual and commercial agents:
      * Individual Agent: First and Last Name ONLY
-     * Commercial Agent or Business Agent or Business : Full legal entity name (e.g., "XYZ Corporation", "Smith LLC")
-
-3. AGENT TYPE IDENTIFICATION:
-   - Check for corporate identifiers: 
-     * Triggers COMMERCIAL/ENTITY/Business agent: "Inc", "LLC", "Corp", "Company"
-     * Triggers INDIVIDUAL agent: Standard personal names
-
+    
 4. CHECKBOX/RADIO BUTTON SELECTION:
    - MANDATORY: Select appropriate agent type checkbox
      * Individual Registered Agent checkbox
@@ -1616,11 +1716,20 @@ ABSOLUTE REQUIREMENT:
 
 
 ## 4. 🚨 ORGANIZER DETAILS POPULATION
-
+if the pdf asked for the Organizer Information then add the below values dont put the values of Registered Agent 
 ### Extraction Sources:
-- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name`
-- Phone: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Phone`
-- Email: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Email`
+- Name of Organizer : `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name`
+- Phone of Organizer : `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Phone`
+- Email of Organizer: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Email`
+
+Address of the Organizer ::
+ Get the address of the organizer as below: 
+ Address Line 1 : `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_Address_Line_1`
+ CIty: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_City`
+ ZIP: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_Zip_Code`
+get the organizer address from above only 
+
+
 
 ### Matching Strategies:
 - SEMANTIC FIELD DETECTION
@@ -1652,8 +1761,12 @@ add the First Name: `data.contactDetails.firstName` and Last Name: `data.contact
 - Shares Par Value: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Shares_Par_Value`
 
 ### Matching Strategies:
-- DEFAULT TO "COMMON" SHARES
-- NUMERIC FIELD POPULATION
+1. Shares Class Selection
+Mandatory Action
+
+ALWAYS select "COMMON" for shares class
+This is a strict, non-negotiable requirement
+Apply to any field asking for share type, stock type, or similar- NUMERIC FIELD POPULATION
 - VERIFICATION OF NUMERIC CONSTRAINTS
 
 ## 7. 🚨 NAICS CODE POPULATION
@@ -1732,7 +1845,7 @@ CRITICAL POPULATION GUIDELINES
 USE RA_Name EXCLUSIVELY for agent's name
 ZERO address information in name field
 ABSOLUTE address component separation
-MANDATORY signature in "Signature accepting an Organizer"
+MANDATORY signature in "Signature accepting an Organizer"(critically mandatory)
 
 ## 🚨 REGISTERED AGENT BUSINESS ENTITY POPULATION - CRITICAL DIRECTIVE
 
@@ -1821,10 +1934,74 @@ ZERO TOLERANCE for incorrect registered agent population. EVERY field MUST be pr
 - Incorporator Phone / Inc Phone: `Incorporator_Details.Inc_Contact_No`
 - Incorporator Email / Inc Email : `Incorporator_Details.Inc_Email_Address`
 
-## 12. 🚨 Signature
-IF the code ask for the signature then select the Organizer name as the signature and fill in the Organizer Name for LLC by considering relevant json value and Incorporator name for Corp .
+
 ## 13. 🚨 Filing Date. 
 for the date of filing fill in the current days date in date of filing or similar date . 
+
+## 14. 🚨 Date. 
+for the date of filing or the date  fill in the current days date in date of filing or similar date . 
+
+### # 15. Critical Signature Filling Instructions
+
+## MANDATORY REQUIREMENTS
+
+1. BUSINESS TYPE SIGNATURE RULES
+   - FOR LLC (Limited Liability Company):
+     * ONLY FILL SIGNATURE with ORGANIZER'S FULL LEGAL NAME
+     * IF NO ORGANIZER NAME IS PROVIDED, TRIGGER A MANDATORY FIELD ERROR
+     * NO EXCEPTIONS ALLOWED
+
+   - FOR CORPORATION:
+     * ONLY FILL SIGNATURE with INCORPORATOR'S FULL LEGAL NAME
+     * IF NO INCORPORATOR NAME IS PROVIDED, TRIGGER A MANDATORY FIELD ERROR
+     * NO EXCEPTIONS ALLOWED
+
+2. STRICT VALIDATION CRITERIA
+   - ABSOLUTELY NO DEFAULT OR PLACEHOLDER VALUES
+   - CASE-SENSITIVE EXACT MATCH REQUIRED
+   - VALIDATION MUST CHECK:
+     * Presence of name
+     * Minimum name length (at least 2 characters)
+     * No numeric or special characters in name
+     * Trim any leading/trailing whitespaces
+
+3. ERROR HANDLING
+   - IF SIGNATURE CANNOT BE DETERMINED:
+     * IMMEDIATELY HALT PROCESS
+     * GENERATE CLEAR ERROR MESSAGE
+     * DO NOT PROCEED WITH FORM SUBMISSION
+
+4. ADDITIONAL CONSTRAINTS
+   - REJECT ANY BUSINESS TYPE NOT EXPLICITLY DEFINED
+   - ONLY ACCEPT 'LLC' OR 'CORPORATION' (EXACT SPELLING)
+   - NO VARIATIONS OR ABBREVIATIONS PERMITTED
+
+## IMPLEMENTATION GUIDELINES
+
+### PSEUDO-CODE LOGIC
+```
+IF business_type == "LLC":
+    IF organizer_name IS VALID:
+        signature = organizer_name
+    ELSE:
+        TRIGGER MANDATORY ERROR
+
+IF business_type == "CORPORATION":
+    IF incorporator_name IS VALID:
+        signature = incorporator_name
+    ELSE:
+        TRIGGER MANDATORY ERROR
+
+IF business_type NOT IN ["LLC", "CORPORATION"]:
+    REJECT SUBMISSION
+```
+
+## CRITICAL ENFORCEMENT
+
+- ZERO TOLERANCE FOR INCOMPLETE OR INCORRECT INFORMATION
+- SYSTEM MUST PREVENT SUBMISSION IF SIGNATURE RULES ARE NOT MET
+- EXPLICIT VALIDATION AT EVERY SINGLE STEP
+- NO IMPLICIT OR ASSUMED VALUES ALLOWED
 ### Matching Strategies:
 - MULTI-FIELD POPULATION
 - CONTACT INFORMATION VERIFICATION
