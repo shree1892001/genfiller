@@ -20,7 +20,7 @@ from pydantic import BaseModel, field_validator
 from Common.constants import *
 
 API_KEYS = {
-    "field_matcher": API_KEY_2,
+    "field_matcher": API_KEY_1,
 }
 
 
@@ -189,6 +189,8 @@ class MultiAgentFormFiller:
         shutil.copy2(pdf_path, backup_pdf)
         print(f"Created backup of original PDF: {backup_pdf}")
 
+        print(json_data)
+
         pdf_fields = await self.extract_pdf_fields(pdf_path)
         ocr_text_elements = await self.extract_ocr_text(pdf_path)
         flat_json = self.flatten_json(json_data)
@@ -197,14 +199,44 @@ class MultiAgentFormFiller:
         # Print available JSON fields for debugging
         print("Available JSON fields:")
         for key in flat_json.keys():
-            print(f" - {key}: {flat_json[key]}")
 
-        prompt = FIELD_MATCHING_PROMPT_UPDATED.format(
+            if key=="State.stateFullDesc":
+                print(flat_json[key])
+                state=flat_json[key]
+
+        if state=="Pennsylvania":
+           print("Running 1")
+           prompt = FIELD_MATCHING_PROMPT_UPDATED4.format(
             json_data=json.dumps(flat_json, indent=2, cls=NumpyEncoder),
             pdf_fields=json.dumps([{"uuid": k, "info": v} for k, v in pdf_fields.items()], indent=2, cls=NumpyEncoder),
             ocr_elements=json.dumps(ocr_text_elements, indent=2, cls=NumpyEncoder),
             field_context=json.dumps(field_context, indent=2, cls=NumpyEncoder)
-        )
+           )
+        elif state=="Michigan" :
+            print("Running 2")
+            prompt = FIELD_MATCHING_PROMPT_UPDATED.format(
+                json_data=json.dumps(flat_json, indent=2, cls=NumpyEncoder),
+                pdf_fields=json.dumps([{"uuid": k, "info": v} for k, v in pdf_fields.items()], indent=2,
+                                      cls=NumpyEncoder),
+                ocr_elements=json.dumps(ocr_text_elements, indent=2, cls=NumpyEncoder),
+                field_context=json.dumps(field_context, indent=2, cls=NumpyEncoder)
+            )
+        else:
+            print("Running 3")
+            prompt = FIELD_MATCHING_PROMPT_UPDATED1.format(
+                json_data=json.dumps(flat_json, indent=2, cls=NumpyEncoder),
+                pdf_fields=json.dumps([{"uuid": k, "info": v} for k, v in pdf_fields.items()], indent=2,
+                                      cls=NumpyEncoder),
+                ocr_elements=json.dumps(ocr_text_elements, indent=2, cls=NumpyEncoder),
+                field_context=json.dumps(field_context, indent=2, cls=NumpyEncoder)
+            )
+
+
+
+
+
+
+
 
         matches, ocr_matches = [], []
         for attempt in range(max_retries):
@@ -592,7 +624,7 @@ class MultiAgentFormFiller:
         return items
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\MichiganLLC.pdf"
+    template_pdf = "D:\\demo\\Services\\DelawareLLC.pdf"
     json_path = "D:\\demo\\Services\\form_data1.json"
     output_pdf = "D:\\demo\\Services\\fill_smart14.pdf"
 

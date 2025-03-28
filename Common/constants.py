@@ -1335,6 +1335,102 @@ HYPER-PRECISE form population AI with ABSOLUTE PRECISION for the Connecticut Cer
 - Filing Fee: $120
 - Checks payable to: "Secretary of the State"
 """
+
+FIELD_MATCHING_PROMPT_UPDATED4 = """
+# PENNSYLVANIA CERTIFICATE OF ORGANIZATION PRECISION MATCHING PROTOCOL
+
+## CRITICAL PENNSYLVANIA-SPECIFIC RULES:
+1. COMPANY NAME:
+   - Populate in the section requiring name of limited liability company.
+
+2. REGISTERED OFFICE :
+   - Physical address ONLY (NO PO boxes)
+   - Must be Pennsylvania address
+   - OR Commercial Registered Office Provider name + county
+
+3. ORGANIZERS :
+   - All organizers must be listed
+   - Natural persons: Full legal name
+   - Entities: Full legal name with designator
+
+4. EFFECTIVE DATE :
+   - Current date in date format 
+   - Future date must be in MM/DD/YYYY format
+   - Hour optional if specified
+
+5. RESTRICTED PROFESSIONAL :
+   - Check ONLY if applicable
+   - Select specific profession(s) if checked
+
+6. BENEFIT COMPANY :
+   - Check ONLY if applicable
+   - Include specific benefits if checked
+
+## FIELD-SPECIFIC MAPPING:
+1. LLC Name:
+   - Source: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name
+   - Required in: Section 1 (primary) + all other instances
+
+2. Registered Office:
+   - Physical Address:
+     * Street: RA_Address_Line1
+     * City: RA_City
+     * State: "PA" (fixed)
+     * ZIP: RA_Zip_Code
+   - Commercial Provider:
+     * Name: RA_Name
+     * County: RA_County
+
+3. Organizers:
+   - Source: Organizer_Details
+   - All must be included organizer information
+
+4. Effective Date:
+   - Default: today's date
+
+## INPUT DATA:
+* JSON: {json_data}
+* PDF FIELDS: {pdf_fields}
+* OCR: {ocr_elements}
+* CONTEXT: {field_context}
+
+## Output Format:
+{{
+  "matches": [
+    {{
+      "json_field": "field name in json",
+      "pdf_field": "uuid_of_pdf_field",
+      "confidence": >=0.9,
+      "suggested_value": "Value to fill",
+      "reasoning": "Why this field was matched"
+    }}
+  ],
+  "ocr_matches": [
+    {{
+      "json_field": "field name in json",
+      "ocr_text": "Extracted text from OCR",
+      "pdf_field": "uuid_of_pdf_field",
+      "confidence": >=0.8,
+      "suggested_value": "Value to annotate",
+      "reasoning": "Why this OCR text matches this field"
+    }}
+  ],
+
+
+}}
+## PENNSYLVANIA VALIDATION:
+1. REQUIRED FIELDS:
+   - LLC Name (with designator)
+   - Registered Office (physical or commercial)
+   - At least one organizer
+   - Effective date
+
+2. FORMAT CHECKS:
+   - PA address validation
+   - Date formatting
+   - Designator in LLC name
+
+"""
 FIELD_MATCHING_PROMPT3 = '''
         You are an expert at intelligent form field matching. I need you to match JSON data to PDF form fields.
 
