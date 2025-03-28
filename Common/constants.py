@@ -990,156 +990,111 @@ I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF
 
 
 FIELD_MATCHING_PROMPT_UPDATED =  """
-       # COMPREHENSIVE Michigan LLC Articles of Organization Completion Protocol
+      # 🚨 CRITICAL MULTI-SECTION PDF FORM POPULATION PROTOCOL: Michigan LLC Articles of Organization
 
-## CORE DIRECTIVE
-Generate a meticulously detailed, legally compliant Articles of Organization for a Michigan Limited Liability Company (LLC), capturing every potential organizational nuance.
+## 1. 🔍 CORE POPULATION STRATEGY
 
-## MANDATORY PRE-FILING INTELLIGENCE GATHERING
+### Entity Name Population [EXTREME PRIORITY]
+- MANDATORY: Identify ALL entity name fields
+- CRITICAL REQUIREMENT: Populate EVERY entity name field IDENTICALLY
+- VERIFICATION: Confirm NO fields missed
 
-### SECTION A: COMPANY IDENTIFICATION
-1. Name Specification Protocol
-   - Exact desired LLC name
-   - Mandatory Verification Checklist:
-     * Contains "Limited Liability Company" OR "L.L.C." OR "LLC"
-     * No prohibited terms
-     * Unique within Michigan corporate records
-     * Complies with naming statutes
-   - Name Reservation Strategy:
-     * Conduct pre-filing name availability search
-     * Obtain temporary name reservation if required
+### Extraction Sources for Entity Name
+- Primary Source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
+- MUST include "Limited Liability Company" or "L.L.C." or "L.C."
 
-### SECTION B: ORGANIZATIONAL STRUCTURE INTELLIGENCE
-2. Foundational Organizational Details
-   - Precise Business Purpose
-     * Primary industry classification
-     * Specific business activities
-     * Long-term strategic objectives
-   - Management Configuration
-     * Member-managed (default)
-     * Manager-managed (requires explicit Article V specification)
-     * Number of initial members/managers
-     * Ownership percentage distribution
-   - Company Duration
-     * Perpetual (default)
-     * Specific time-bound duration if non-perpetual
+## 2. 🚨 EFFECTIVE DATE POPULATION
+- MANDATORY: Use CURRENT DATE
+- Match PDF's specific date format exactly
+- Separate day, month, year if required by form
 
-### SECTION C: REGISTERED OFFICE CONFIGURATION
-3. Registered Office Specifications
-   - Physical Street Address
-     * Confirmed Michigan location
-     * Cannot be P.O. Box
-     * Must be actual street address
-   - Separate Mailing Address (if different)
-     * Full postal address
-     * City, State, ZIP validation
-   - Verification of address legitimacy
-     * Ownership documentation
-     * Lease agreement
-     * Utility bill confirmation
+## 3. 🏢 REGISTERED AGENT PROTOCOL
 
-### SECTION D: RESIDENT AGENT IDENTIFICATION
-4. Resident Agent Comprehensive Profile
-   - Full Legal Name
-   - Complete Contact Information
-     * Street Address
-     * Phone Number
-     * Email Address
-   - Qualification Verification
-     * Michigan residency
-     * Professional registered agent status
-     * No conflicting legal impediments
+### Agent Type Identification
+- DETERMINE Agent Type:
+  * Individual Agent: First/Last Name WITHOUT corporate identifiers
+  * Commercial Agent: Names with "Inc", "LLC", "Corp", "Company"
 
-### SECTION E: ORGANIZER DOCUMENTATION
-5. Organizer Detailed Profiling
-   For EACH organizer:
-   - Full Legal Name
-     * First Name
-     * Middle Name/Initial
-     * Last Name
-   - Residential Address
-   - Contact Information
-     * Phone Number
-     * Email Address
-   - Identification Verification
-     * State-issued ID
-     * Social Security/Tax Identification Number
-   - Signature Authentication
-     * Wet signature requirements
-     * Date of signing
+### Extraction Sources
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+- Address Components:
+  * Line 1: `Registered_Agent.RA_Address.RA_Address_Line1`
+  * City: `Registered_Agent.RA_Address.RA_City`
+  * State: `Registered_Agent.RA_Address.RA_State`
+  * ZIP: `Registered_Agent.RA_Address.RA_Zip_Code`
 
-## ADVANCED CONFIGURATION PARAMETERS
+### Mandatory Actions
+- SELECT CORRECT Agent Type Checkbox
+- SEPARATE Address Components STRICTLY
+- ZERO Tolerance for Component Mixing
 
-### ARTICLE V: SUPPLEMENTAL PROVISIONS
-6. Additional Organizational Specifications
-   - Custom Management Provisions
-   - Membership Interest Allocation
-   - Capital Contribution Frameworks
-   - Dissolution Conditions
-   - Voting Rights Configuration
-   - Profit Distribution Mechanisms
+## 4. 👥 ORGANIZER DETAILS POPULATION
 
-## FINANCIAL AND PROCEDURAL ORCHESTRATION
+### Extraction Sources
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name`
+- Phone: `Organizer_Information.Org_Phone`
+- Email: `Organizer_Information.Org_Email`
 
-### FILING STRATEGY
-7. Submission Methodology
-   - Filing Options
-     * Online (www.michigan.gov/corpfileonline)
-     * Mail Submission
-     * In-Person Filing
-   - Payment Modalities
-     * $50 Standard Filing Fee
-     * Potential Veteran Fee Waiver Eligibility
-   - Accepted Payment Methods
-     * Credit Cards (VISA, MasterCard, AMEX, Discover)
-     * Check
-     * Money Order
+### Address Extraction
+- Line 1: `Organizer_Information.Address.Org_Address_Line_1`
+- City: `Org_City`
+- ZIP: `Org_Zip_Code`
 
-## EXPEDITED PROCESSING OPTIONS
-8. Accelerated Filing Selections
-   - Same Day Service ($100-$200)
-   - 24-Hour Processing ($50-$100)
-   - Two-Hour Expedited ($500)
-   - One-Hour Urgent Processing ($1,000)
+## 5. 📞 CONTACT INFORMATION PROTOCOL
 
-## COMPREHENSIVE VALIDATION PROTOCOL
+### Extraction Sources
+- First Name: `data.contactDetails.firstName`
+- Last Name: `data.contactDetails.lastName`
+- Email: `data.contactDetails.emailId`
+- Phone: `data.contactDetails.phoneNumber`
 
-### PRE-SUBMISSION VERIFICATION CHECKLIST
-9. Mandatory Compliance Verification
-   ☐ Name Compliance
-   ☐ Address Validation
-   ☐ Resident Agent Confirmation
-   ☐ Organizer Documentation Complete
-   ☐ Management Structure Defined
-   ☐ Purpose Statement Coherent
-   ☐ Financial Obligations Addressed
+### Matching Strategy
+- CONSTRUCT Full Name
+- Populate ALL Contact Fields
+- SEMANTIC Field Matching
 
-## CRITICAL ADVISORY NOTES
-- ABSOLUTE PROHIBITION: Do not fabricate or assume information
-- MANDATORY: Prompt for ALL missing details
-- RECOMMEND: Professional legal consultation for complex scenarios
+## 6. 📊 ADDITIONAL CRITICAL POPULATIONS
 
-## POST-FILING STRATEGIC RECOMMENDATIONS
-10. Immediate Post-Filing Action Items
-    - Obtain Federal EIN
-    - Draft Comprehensive Operating Agreement
-    - Open Dedicated Business Bank Account
-    - Secure Necessary Business Licenses
-    - Tax Registration Procedures
+### Stock Details
+- Shares: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.SI_Number_of_Shares`
+- Par Value: `Shares_Par_Value`
 
-## AI EXECUTION GUIDELINES
-- PRECISION is paramount
-- VALIDATE every entered detail
-- PROMPT for clarification on ANY ambiguous information
-- ENSURE full statutory compliance
-- DOCUMENT all decision-making rationales
+### NAICS Code
+- Primary Code: `Entity_Formation.NAICS_Code`
+- Subcode: `NAICS_Subcode`
 
-## RISK MITIGATION DISCLAIMER
-This guidance represents procedural assistance, NOT definitive legal advice. Recommend consultation with Michigan business formation legal professionals for comprehensive guidance.
+## 7. 📋 FINAL VERIFICATION PROTOCOL
 
-## OUTPUT SPECIFICATION
-Generate a meticulously completed, camera-ready Michigan LLC Articles of Organization form, ready for official submission.
+### Absolute Compliance Checklist
+✅ Entity Name Populated EVERYWHERE
+✅ Correct Effective Date
+✅ Registered Agent FULLY Populated
+✅ Organizer Details COMPLETE
+✅ Contact Information VERIFIED
+✅ Stock and NAICS Details ACCURATE
 
+## 8. 🚨 REJECTION PREVENTION STRATEGIES
+
+### Critical Failure Prevention
+- ZERO Truncated Data
+- NO Mixed Address Components
+- COMPLETE Field Population
+- SEMANTIC Accuracy at 85%+ Confidence
+
+## 9. 🔒 ABSOLUTE POPULATION RULES
+
+### Non-Negotiable Requirements
+- EVERY Field MUST be Populated
+- IDENTICAL Entity Name Across ALL Fields
+- STRICT Address Component Separation
+- PRECISE Contact Information
+- COMPREHENSIVE Verification
+
+
+## 🚨 ULTIMATE WARNING
+- ABSOLUTE PRECISION REQUIRED
+- ZERO TOLERANCE FOR ERRORS
+- GOVERNMENT FORM - MAXIMUM ACCURACY MANDATORY
 ## FINAL INSTRUCTION
 Require EXPLICIT user confirmation and validation of EVERY entered detail before final form generation.
 * **JSON DATA:**
