@@ -1184,7 +1184,7 @@ MISTRAL_API_KEY= "7NZvr1Bugz4jzpKuWks11jX9jMDCbkv3G"
 
 
 
-FIELD_MATCHING_PROMPT_UPDATED4="""
+FIELD_MATCHING_PROMPT_UPDATED3="""
 # 🚨 CRITICAL CERTIFICATE OF ORGANIZATION POPULATION PROTOCOL
 
 ## MISSION STATEMENT
@@ -1384,7 +1384,49 @@ FIELD_MATCHING_PROMPT_UPDATED4 = """
 3. Organizers:
    - Source: Organizer_Details
    - All must be included organizer information
+4. Incorporator
+- Source: Incorporator_Details
+- All must be included incorporator information
+6. 🚨 STOCK DETAILS POPULATION
 
+### Extraction Sources:
+- Number of Shares: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.SI_Number_of_Shares`
+- Shares Par Value: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Shares_Par_Value`
+
+### Matching Strategies:
+1. Shares Class Selection
+Mandatory Action
+
+ALWAYS select "COMMON" for shares class
+This is a strict, non-negotiable requirement
+Apply to any field asking for share type, stock type, or similar- NUMERIC FIELD POPULATION
+- VERIFICATION OF NUMERIC CONSTRAINTS
+
+## 7. 🚨 NAICS CODE POPULATION
+
+### Extraction Sources:
+- NAICS Code: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Code`
+- NAICS Subcode: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Subcode`
+
+### Matching Strategies:
+- PRECISE CODE MATCHING
+- SUBCODE POPULATION
+- FORMATTING VERIFICATION
+
+## 8. 🚨 GOVERNOR DETAILS POPULATION
+
+### Extraction Sources:
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Governor_Information.Governor_Name`
+- Address: 
+  * Line 1: `Governor_Address.Governor_Address_Line_1`
+  * City: `Governor_Address.Governor_City`
+  * State: `Governor_Address.Governor_State`
+  * Zip: `Governor_Address.Governor_Zip_Code`
+
+### Matching Strategies:
+- COMPREHENSIVE POPULATION
+- ADDRESS COMPONENT SEPARATION
+- VERIFICATION OF ALL FIELDS
 4. Effective Date:
    - Default: today's date
 
