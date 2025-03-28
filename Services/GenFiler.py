@@ -199,7 +199,7 @@ class MultiAgentFormFiller:
         for key in flat_json.keys():
             print(f" - {key}: {flat_json[key]}")
 
-        prompt = FIELD_MATCHING_PROMPT_UPDATED1.format(
+        prompt = FIELD_MATCHING_PROMPT_UPDATED.format(
             json_data=json.dumps(flat_json, indent=2, cls=NumpyEncoder),
             pdf_fields=json.dumps([{"uuid": k, "info": v} for k, v in pdf_fields.items()], indent=2, cls=NumpyEncoder),
             ocr_elements=json.dumps(ocr_text_elements, indent=2, cls=NumpyEncoder),
@@ -592,9 +592,9 @@ class MultiAgentFormFiller:
         return items
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\arizonacorp.pdf"
-    json_path = "D:\\demo\\Services\\form_data.json"
-    output_pdf = "D:\\demo\\Services\\fill_smart13.pdf"
+    template_pdf = "D:\\demo\\Services\\MichiganLLC.pdf"
+    json_path = "D:\\demo\\Services\\form_data1.json"
+    output_pdf = "D:\\demo\\Services\\fill_smart14.pdf"
 
     with open(json_path, "r", encoding="utf-8") as f:
         json_data = json.load(f)

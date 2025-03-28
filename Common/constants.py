@@ -145,7 +145,10 @@ SPECIAL ATTENTION - COMPANY NAME FIELDS:
    - "RA_Email_Address"
    - "RA_Contact_No"
    - "agent.contactDetails"
-   
+   # Form Filling Layout and Font Size Specification
+
+
+
   Principal Address: 
       find the principal address field   in the pdf 
       - fill the address line 1 pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1 or similar json field 
@@ -163,8 +166,23 @@ SPECIAL ATTENTION - COMPANY NAME FIELDS:
    - "City no abbreviations_2"
    - "State"
    - "Zip Code"
- 
-
+ Street  Address: 
+      find the street address field   in the pdf 
+      - fill the address line 1 pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_1 or similar json field 
+      - fill the address line 2 pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Address_Line_2 or similar json field 
+      - fill the city pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_City or similar json field
+      - fill the state pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_State or similar json field 
+      - fill the Zip or Zip Code or similar pdf field with data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Address.PA_Zip_Code or similar json field 
+ Principal  Office:
+   - "a. Initial Street Address of Principal Office - Do not enter a P.O. Box"
+   - "Postal Address"
+   - "Correspondence Address"
+   - "Alternative Address"
+   -"State_2"
+   - "Zip Code_2"
+   - "City no abbreviations_2"
+   - "State"
+   - "Zip Code"
 ORGANIZER INFORMATION:
    Name Fields:
    - "Organizer Name"
@@ -972,204 +990,158 @@ I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF
 
 
 FIELD_MATCHING_PROMPT_UPDATED =  """
-       # Connecticut LLC Certificate of Organization - Hyper-Precise Population Protocol
+       # COMPREHENSIVE Michigan LLC Articles of Organization Completion Protocol
 
-# 🚨 COMPREHENSIVE MULTI-DIMENSIONAL FORM POPULATION MASTER PROTOCOL
+## CORE DIRECTIVE
+Generate a meticulously detailed, legally compliant Articles of Organization for a Michigan Limited Liability Company (LLC), capturing every potential organizational nuance.
 
-## 🎯 MISSION CRITICAL OBJECTIVE
-Achieve ABSOLUTE PERFECTION in populating the Connecticut Limited Liability Company Certificate of Organization with:
-- 100% Accuracy
-- Semantic Intelligence
-- Zero Tolerance for Errors
-- Comprehensive Contextual Understanding
+## MANDATORY PRE-FILING INTELLIGENCE GATHERING
 
-## 🔬 PRE-POPULATION INTELLIGENCE FRAMEWORK
+### SECTION A: COMPANY IDENTIFICATION
+1. Name Specification Protocol
+   - Exact desired LLC name
+   - Mandatory Verification Checklist:
+     * Contains "Limited Liability Company" OR "L.L.C." OR "LLC"
+     * No prohibited terms
+     * Unique within Michigan corporate records
+     * Complies with naming statutes
+   - Name Reservation Strategy:
+     * Conduct pre-filing name availability search
+     * Obtain temporary name reservation if required
 
-### DOCUMENT ARCHITECTURAL ANALYSIS
-- FORM SPECIFICATION:
-  * Official Document: Connecticut Secretary of State Certificate of Organization
-  * Total Pages: 2
-  * Governing Agency: Connecticut Secretary of State
-  * Filing Mechanism: Paper and Online Submission
-  * Standard Filing Fee: $120
+### SECTION B: ORGANIZATIONAL STRUCTURE INTELLIGENCE
+2. Foundational Organizational Details
+   - Precise Business Purpose
+     * Primary industry classification
+     * Specific business activities
+     * Long-term strategic objectives
+   - Management Configuration
+     * Member-managed (default)
+     * Manager-managed (requires explicit Article V specification)
+     * Number of initial members/managers
+     * Ownership percentage distribution
+   - Company Duration
+     * Perpetual (default)
+     * Specific time-bound duration if non-perpetual
 
-### 🌐 UNIVERSAL POPULATION PRINCIPLES
-1. SEMANTIC MATCHING MATRIX
-   - Deep Contextual Understanding
-   - Minimum Confidence Threshold: 0.85
-   - Exhaustive Field Scanning
-   - Precise Data Format Preservation
-   - Dynamic Text Adaptation
+### SECTION C: REGISTERED OFFICE CONFIGURATION
+3. Registered Office Specifications
+   - Physical Street Address
+     * Confirmed Michigan location
+     * Cannot be P.O. Box
+     * Must be actual street address
+   - Separate Mailing Address (if different)
+     * Full postal address
+     * City, State, ZIP validation
+   - Verification of address legitimacy
+     * Ownership documentation
+     * Lease agreement
+     * Utility bill confirmation
 
-## 🚨 HYPER-GRANULAR SECTION POPULATION PROTOCOLS
+### SECTION D: RESIDENT AGENT IDENTIFICATION
+4. Resident Agent Comprehensive Profile
+   - Full Legal Name
+   - Complete Contact Information
+     * Street Address
+     * Phone Number
+     * Email Address
+   - Qualification Verification
+     * Michigan residency
+     * Professional registered agent status
+     * No conflicting legal impediments
 
-### SECTION 1: ENTITY IDENTIFICATION - ABSOLUTE PRIORITY
+### SECTION E: ORGANIZER DOCUMENTATION
+5. Organizer Detailed Profiling
+   For EACH organizer:
+   - Full Legal Name
+     * First Name
+     * Middle Name/Initial
+     * Last Name
+   - Residential Address
+   - Contact Information
+     * Phone Number
+     * Email Address
+   - Identification Verification
+     * State-issued ID
+     * Social Security/Tax Identification Number
+   - Signature Authentication
+     * Wet signature requirements
+     * Date of signing
 
-#### PRIMARY NAME EXTRACTION SOURCES
-- Hierarchical Source Paths:
-  * `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
-  * `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name`
-  * `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+## ADVANCED CONFIGURATION PARAMETERS
 
-#### NAME POPULATION MANDATES
-- MANDATORY BUSINESS DESIGNATION REQUIREMENTS:
-  * REQUIRED SUFFIXES:
-    - LLC
-    - L.L.C.
-    - Limited Liability Company
-  * PROFESSIONAL VARIANTS:
-    - P.L.L.C.
-    - PLLC
-    - Professional Limited Liability Company
+### ARTICLE V: SUPPLEMENTAL PROVISIONS
+6. Additional Organizational Specifications
+   - Custom Management Provisions
+   - Membership Interest Allocation
+   - Capital Contribution Frameworks
+   - Dissolution Conditions
+   - Voting Rights Configuration
+   - Profit Distribution Mechanisms
 
-- CRITICAL NAME VALIDATION CRITERIA:
-  * Must be distinguishable from existing business names
-  * Exact match to source documentation
-  * Precise required designation formatting
-  * No ambiguity or potential confusion
+## FINANCIAL AND PROCEDURAL ORCHESTRATION
 
-#### REGEX IDENTIFICATION PATTERNS
-- Comprehensive Name Field Detection:
-  * `.*entity.*name.*`
-  * `.*llc.*name.*`
-  * `.*corporation.*name.*`
-  * `.*business.*name.*`
+### FILING STRATEGY
+7. Submission Methodology
+   - Filing Options
+     * Online (www.michigan.gov/corpfileonline)
+     * Mail Submission
+     * In-Person Filing
+   - Payment Modalities
+     * $50 Standard Filing Fee
+     * Potential Veteran Fee Waiver Eligibility
+   - Accepted Payment Methods
+     * Credit Cards (VISA, MasterCard, AMEX, Discover)
+     * Check
+     * Money Order
 
-### SECTION 2: REGISTERED AGENT POPULATION PROTOCOL
+## EXPEDITED PROCESSING OPTIONS
+8. Accelerated Filing Selections
+   - Same Day Service ($100-$200)
+   - 24-Hour Processing ($50-$100)
+   - Two-Hour Expedited ($500)
+   - One-Hour Urgent Processing ($1,000)
 
-#### AGENT TYPE COMPREHENSIVE DETERMINATION
+## COMPREHENSIVE VALIDATION PROTOCOL
 
-1. INDIVIDUAL AGENT EXHAUSTIVE CRITERIA:
-   - IDENTIFICATION MARKERS:
-     * Clean names without corporate identifiers
-     * Standard first/last name format
-   - MANDATORY POPULATION FIELDS:
-     * Full legal name
-     * Complete business address
-     * Connecticut residence address
-     * Connecticut mailing address
-     * Explicit acceptance signature
-   - RESIDENCY REQUIREMENTS:
-     * Must be Connecticut resident
-     * Can be LLC member/manager
+### PRE-SUBMISSION VERIFICATION CHECKLIST
+9. Mandatory Compliance Verification
+   ☐ Name Compliance
+   ☐ Address Validation
+   ☐ Resident Agent Confirmation
+   ☐ Organizer Documentation Complete
+   ☐ Management Structure Defined
+   ☐ Purpose Statement Coherent
+   ☐ Financial Obligations Addressed
 
-2. BUSINESS ENTITY AGENT DEFINITIVE CRITERIA:
-   - STRICT IDENTIFICATION FLAGS:
-     * Names containing: "Inc", "LLC", "Corp", "Company"
-     * Must be pre-registered business entity
-     * ABSOLUTELY CANNOT be the LLC itself
-   - COMPREHENSIVE MANDATORY FIELDS:
-     * Official registered business name
-     * Precise Connecticut business address
-     * Complete Connecticut mailing address
-     * Authorized representative signature
-     * Full name and official title of signing representative
+## CRITICAL ADVISORY NOTES
+- ABSOLUTE PROHIBITION: Do not fabricate or assume information
+- MANDATORY: Prompt for ALL missing details
+- RECOMMEND: Professional legal consultation for complex scenarios
 
-#### ADDRESS POPULATION ULTRA-PRECISE RULES
+## POST-FILING STRATEGIC RECOMMENDATIONS
+10. Immediate Post-Filing Action Items
+    - Obtain Federal EIN
+    - Draft Comprehensive Operating Agreement
+    - Open Dedicated Business Bank Account
+    - Secure Necessary Business Licenses
+    - Tax Registration Procedures
 
-1. PRINCIPAL OFFICE ADDRESS REQUIREMENTS:
-   - MANDATORY COMPONENTS:
-     * Full street address (NO P.O. Box)
-     * Complete street number
-     * Full street name
-     * City
-     * State
-     * Zip Code
-   - VALIDATION CHECKPOINTS:
-     * Address completeness verification
-     * No P.O. Box substitution
-     * Exact format matching
+## AI EXECUTION GUIDELINES
+- PRECISION is paramount
+- VALIDATE every entered detail
+- PROMPT for clarification on ANY ambiguous information
+- ENSURE full statutory compliance
+- DOCUMENT all decision-making rationales
 
-2. MAILING ADDRESS POPULATION STRATEGY:
-   - ACCEPTABLE VARIATIONS:
-     * Street address
-     * P.O. Box permitted
-   - REQUIRED ELEMENTS:
-     * Street/Box information
-     * City
-     * State (MUST be specified)
-     * Zip Code
-   - CRITICAL DIFFERENTIATION from Principal Address
+## RISK MITIGATION DISCLAIMER
+This guidance represents procedural assistance, NOT definitive legal advice. Recommend consultation with Michigan business formation legal professionals for comprehensive guidance.
 
-3. REGISTERED AGENT ADDRESS ULTRA-STRICT RULES:
-   - PHYSICAL ADDRESS ONLY
-   - ZERO P.O. BOX TOLERANCE
-   - CONNECTICUT STATE ADDRESS MANDATORY
-   - ABSOLUTE ADDRESS COMPONENT SEPARATION
+## OUTPUT SPECIFICATION
+Generate a meticulously completed, camera-ready Michigan LLC Articles of Organization form, ready for official submission.
 
-### SECTION 3: CONTACT INFORMATION HYPER-INTELLIGENT PROTOCOL
-
-#### DATA EXTRACTION MATRIX
-- FULL NAME CONSTRUCTION:
-  * Combine: `data.contactDetails.firstName`
-  * Concatenate: `data.contactDetails.lastName`
-- CONTACT METHOD POPULATION:
-  * Email: `data.contactDetails.emailId`
-  * Phone: `data.contactDetails.phoneNumber`
-
-#### POPULATION STRATEGIES
-- Semantic field matching
-- Multi-method contact verification
-- Contextual intelligence application
-
-### SECTION 4: ADDITIONAL CRITICAL POPULATION SECTIONS
-
-#### NAICS CODE PRECISION
-- 6-DIGIT CODE MANDATORY
-- EXACT MATCHING REQUIRED
-- SOURCE: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.NAICS_Code`
-
-#### MEMBER/MANAGER INFORMATION
-- MINIMUM 1 ENTRY REQUIRED
-- COMPREHENSIVE FIELD POPULATION:
-  * Full Name
-  * Title (Member/Manager)
-  * Business Address (NO P.O. Box)
-  * Residence Address (NO P.O. Box)
-
-## 🔍 VERIFICATION AND VALIDATION SUPERSTRUCTURE
-
-### POPULATION CONFIDENCE FRAMEWORK
-- Minimum Confidence Threshold: 0.85
-- Multi-Dimensional Verification Layers
-- Semantic Matching Priority
-- Comprehensive Cross-Referencing
-
-### ERROR PREVENTION QUANTUM
-- Total Field Cross-Validation
-- Source Documentation Alignment
-- Duplicate/Conflict Prevention
-- Comprehensive Population Audit
-
-## 🚀 SUBMISSION OPTIMIZATION PROTOCOL
-
-### MANDATORY PRE-SUBMISSION CHECKLIST
-- 100% Section Completion
-- Signatures in Designated Zones
-- Filing Fee Verification ($120)
-- Zero Corrections/Erasures
-- Potential Additional Sheet Preparation
-
-## 🚨 CRITICAL COMPLIANCE WARNING
-- FALSE STATEMENTS: LEGAL PENALTIES APPLY
-- ABSOLUTE ACCURACY REQUIREMENT
-- METICULOUS INFORMATION REVIEW
-
-## 📚 OFFICIAL REFERENCE COORDINATES
-- Official Website: www.business.ct.gov
-- Support Phone: 860-509-6003
-- Official Email: crd@ct.gov
-
-## 📋 STANDARDIZED OUTPUT SCHEMA
-
-
-
-## 🔬 FINAL VERIFICATION QUANTUM
-- TOTAL FIELD POPULATION COUNT
-- SEMANTIC INTEGRITY ASSESSMENT
-- CONTEXTUAL COHERENCE VERIFICATION
-- ABSOLUTE ACCURACY CONFIRMATION
-
+## FINAL INSTRUCTION
+Require EXPLICIT user confirmation and validation of EVERY entered detail before final form generation.
 * **JSON DATA:**
     {json_data}
 * **PDF FORM FIELDS (with UUIDs):**
@@ -1559,6 +1531,169 @@ FIELD_MATCHING_PROMPT_UPDATED1="""
 
 # CRITICAL MULTI-SECTION PDF FORM POPULATION PROTOCOL 🚨
 # Adaptive Form Population Protocol for Name Fields
+# 🚨 CRITICAL STREET ADDRESS POPULATION PROTOCOL
+
+## ABSOLUTE MANDATORY REQUIREMENTS FOR STREET ADDRESS POPULATION
+# ENHANCED ADDRESS MATCHING INSTRUCTIONS 🌐
+
+## COMPREHENSIVE ADDRESS POPULATION STRATEGY
+
+### 1. MULTI-FORMAT ADDRESS HANDLING
+
+#### A. MULTI-FIELD ADDRESS POPULATION
+- Prioritize separate field mapping when available
+- Strictly separate:
+  * Street number
+  * Street name
+  * City
+  * State (two-letter abbreviation)
+  * ZIP code
+
+#### B. SINGLE-FIELD ADDRESS POPULATION
+- When a single "Street Address" field is detected:
+  1. CONCATENATE address components in PRECISE order
+  2. FORMAT: "Street Number Street Name, City, State ZIP"
+  3. EXAMPLE: "123 Business Lane, Springfield, CA 90210"
+
+### 2. POPULATION RULES FOR SINGLE-FIELD SCENARIOS
+
+#### MANDATORY CONCATENATION FORMAT:
+- Street Number and Name: ALWAYS FIRST
+- City: Separated by comma
+- State: Abbreviated, UPPERCASE
+- ZIP: Immediately after state
+- NO EXTRA SPACES
+- USE STANDARD U.S. ADDRESS FORMATTING
+
+### 3. VALIDATION CONSTRAINTS
+
+#### SINGLE-FIELD ADDRESS CHECKS:
+- CONFIRM total length fits field constraints
+- TRUNCATE if exceeding maximum field length
+- PRESERVE critical address components
+- PRIORITIZE: Street + City + State + ZIP
+
+### 4. SOURCE PRIORITY FOR ADDRESS EXTRACTION
+
+#### PRIMARY SOURCES:
+1. `Registered_Agent.RA_Address.RA_Address_Line1`
+2. `Registered_Agent.RA_Address.RA_Address_Line_1`
+3. `Entity_Formation.Registered_Agent.RA_Address.Street`
+
+#### SECONDARY SOURCES:
+- `contactDetails.address.streetAddress`
+- `businessDetails.primaryAddress`
+
+### 5. SPECIAL HANDLING SCENARIOS
+
+#### EDGE CASES:
+- P.O. Box addresses
+- Multi-line street addresses
+- International address formats
+
+#### RESOLUTION STRATEGY:
+- PRIORITIZE most specific, complete address
+- VALIDATE against original data source
+- CONFIRM semantic accuracy
+
+### 6. CONFIDENCE SCORING
+
+#### ADDRESS MATCHING CONFIDENCE:
+- 0.9-1.0: Perfect component match
+- 0.7-0.89: Minor formatting adjustments
+- 0.5-0.69: Significant reformatting required
+- <0.5: REJECT, require manual review
+
+### 7. CRITICAL DIRECTIVES
+
+#### ABSOLUTE RULES:
+- ZERO tolerance for address component mixing
+- 100% PRECISE field-specific mapping
+- SEMANTIC PRESERVATION of address information
+
+### 8. FALLBACK MECHANISM
+
+#### IF STANDARD EXTRACTION FAILS:
+1. Attempt partial address reconstruction
+2. Flag for manual verification
+3. Include reasoning for partial population
+
+### ENFORCEMENT STATEMENT
+🚨 COMPREHENSIVE ADDRESS POPULATION IS NON-NEGOTIABLE 🚨
+- Every address MUST be populated with MAXIMUM precision
+- NO address left incomplete or improperly formatted
+
+
+### 1. PRIMARY ADDRESS EXTRACTION SOURCE
+- FULL STREET ADDRESS: 
+  * Primary Source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Principal_Business_Address.Address_Line_1`
+  * FALLBACK Source: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Business_Address.Street_Address`
+
+### 2. STRICT POPULATION RULES
+- COMPLETELY FILL the ENTIRE street address line
+- ZERO TOLERANCE for partial or incomplete addresses
+- REJECT any submission with truncated or incomplete address
+
+### 3. VALIDATION CRITERIA
+- MUST INCLUDE:
+  * Complete street number
+  * Full street name
+  * Street type (Street, Avenue, Boulevard, etc.)
+  * NO ABBREVIATIONS UNLESS EXPLICITLY IN SOURCE DATA
+
+### 4. CRITICAL CONSTRAINTS
+- NEVER USE P.O. BOXES (EXPLICITLY FORBIDDEN)
+- MATCH EXACTLY with source address
+- PRESERVE ORIGINAL FORMATTING
+- NO MODIFICATIONS TO ADDRESS STRUCTURE
+
+### 5. COMPREHENSIVE ADDRESS VERIFICATION
+- CROSS-REFERENCE with multiple data sources
+- VERIFY AGAINST:
+  * Business Registration Data
+  * Entity Formation Payload
+  * Contact Information Sources
+
+### 6. ERROR PREVENTION MECHANISMS
+- IF address is missing or incomplete:
+  * TRIGGER IMMEDIATE POPULATION ERROR
+  * DO NOT AUTO-GENERATE OR GUESS
+  * REQUIRE MANUAL REVIEW
+
+### 7. FORMATTING GUIDELINES
+- MAINTAIN ORIGINAL CAPITALIZATION
+- PRESERVE FULL ADDRESS COMPONENTS
+- ENSURE READABILITY AND PRECISION
+
+### 8. MULTI-SOURCE ADDRESS VERIFICATION
+```
+FUNCTION verify_street_address(address_sources):
+    PRIORITY_SOURCES = [
+        'Principal_Business_Address.Address_Line_1',
+        'Business_Address.Street_Address',
+        'Contact_Information.Street_Address'
+    ]
+    
+    FOR source IN PRIORITY_SOURCES:
+        IF address IS VALID and COMPLETE:
+            RETURN address
+    
+    TRIGGER POPULATION_ERROR
+```
+
+### 9. ABSOLUTE REJECTION CRITERIA
+- P.O. Box addresses
+- Incomplete street addresses
+- Addresses with missing critical components
+- Addresses from non-primary sources without verification
+
+### 10. FINAL VERIFICATION STATEMENT
+✅ CONFIRM: Full street address populated
+✅ VERIFY: No P.O. Box used
+✅ VALIDATE: Address matches source data exactly
+
+## ENFORCEMENT DIRECTIVE
+ZERO TOLERANCE for incomplete or incorrect street address population. EVERY character MUST be precisely and completely populated following these STRICT guidelines.
 
 ## Core Population Strategy
 
@@ -1578,6 +1713,83 @@ if the pdf field asks for effective date of filing then put in current date (str
 - Hyphenated Names
 - Names with Apostrophes or Special Characters
 
+## CRITICAL FONT AND LAYOUT REQUIREMENTS
+
+### 1. GENERAL LAYOUT PRINCIPLES
+- MAINTAIN EXACT VISUAL ALIGNMENT WITH ORIGINAL DOCUMENT
+- PRESERVE ORIGINAL FIELD SPACING
+- MATCH ORIGINAL DOCUMENT'S MARGINS AND FIELD DIMENSIONS
+
+### 2. FONT SIZE ADAPTATION RULES
+- ANALYZE ORIGINAL DOCUMENT'S FONT SIZES
+- DYNAMICALLY ADJUST TEXT TO FIT DESIGNATED FIELD SPACES
+- SCALING ALGORITHM:
+  * IF text exceeds field width: REDUCE font size
+  * IF text is too small: INCREASE font size SLIGHTLY
+  * MINIMUM READABLE FONT SIZE: 8pt
+  * MAXIMUM FONT SIZE: Match original document's primary font size
+
+### 3. FIELD-SPECIFIC FONT HANDLING
+- HEADING FIELDS: 
+  * BOLD TYPOGRAPHY
+  * 1-2 POINTS LARGER THAN BODY TEXT
+- STANDARD ENTRY FIELDS:
+  * CONSISTENT FONT FAMILY
+  * UNIFORM FONT WEIGHT
+- SIGNATURE FIELDS:
+  * SLIGHT VARIATION IN FONT (MORE NATURAL APPEARANCE)
+  * MAINTAIN LEGIBILITY
+
+### 4. ADAPTIVE TEXT FITTING STRATEGY
+```
+FUNCTION adjust_text_to_field(text, field_width, original_font_size):
+    WHILE text_width > field_width:
+        REDUCE font_size
+        RECALCULATE text_width
+    
+    IF font_size < MINIMUM_READABLE_SIZE:
+        TRIGGER MANUAL REVIEW FLAG
+    
+    RETURN adjusted_text_with_font_size
+```
+
+### 5. ERROR PREVENTION MECHANISMS
+- PREVENT TEXT OVERFLOW
+- MAINTAIN READABILITY
+- PRESERVE DOCUMENT AESTHETIC
+- ENSURE CONSISTENT VISUAL WEIGHT
+
+## IMPLEMENTATION GUIDELINES
+
+1. TEXT SCALING PRIORITY:
+   - READABILITY
+   - FIELD BOUNDARY PRESERVATION
+   - AESTHETIC CONSISTENCY
+
+2. FONT SELECTION HIERARCHY:
+   - MATCH ORIGINAL DOCUMENT FONT
+   - USE PROFESSIONAL, CLEAR TYPEFACES
+   - PRIORITY: SANS-SERIF FOR CLARITY
+
+3. SPECIAL CONSIDERATIONS
+   - HANDLE MULTI-LINE ENTRIES
+   - ADJUST LINE HEIGHT
+   - MAINTAIN VERTICAL CENTERING
+
+### TECHNICAL VALIDATION CHECKLIST
+- ✅ Field boundary respected
+- ✅ Text fully visible
+- ✅ Font size within 8-12pt range
+- ✅ Consistent typography
+- ✅ No text truncation
+- ✅ Maintains original document's visual integrity
+
+## CRITICAL ENFORCEMENT NOTES
+- ABSOLUTE PRECISION IN LAYOUT REPRODUCTION
+- NO DEVIATION FROM ORIGINAL DOCUMENT'S VISUAL STRUCTURE
+- HUMAN-LIKE ATTENTION TO TYPOGRAPHIC DETAIL
+
+
 ### ### ### 2. Entity Name Fields (EXTREME PRIORITY ALERT - MUST FIX IMMEDIATELY):
 
 **🚨 CRITICAL SYSTEM FAILURE ALERT: ENTITY NAME POPULATION 🚨**
@@ -1591,7 +1803,7 @@ if the pdf field asks for effective date of filing then put in current date (str
 **MANDATORY REQUIREMENTS - NON-NEGOTIABLE:**
 
 1. **IDENTIFY ALL ENTITY NAME FIELDS:**
-   - Search the ENTIRE document for ANY field that could hold an entity name
+   - - Search the ENTIRE document for ANY field that could hold an entity name
    - This includes fields labeled: Entity Name, LLC Name, Company Name, Corporation Name, Business Name
    - This includes ANY field in registration sections, certification sections, or signature blocks requiring the entity name
    - This includes ANY field in article sections requiring entity name
@@ -1655,7 +1867,7 @@ CRITICAL DIRECTIVE: Implement ABSOLUTE PRECISION in address field mapping
    - STRICTLY map each component to its dedicated field
 
 2. FIELD-SPECIFIC MAPPING RULES:
-   - STREET ADDRESS: 
+   - STREET ADDRESS add complete principal address here in case of street address and store it : 
      * Numeric street number + street name
      * NO city, state, ZIP
    
@@ -1941,7 +2153,9 @@ for the date of filing fill in the current days date in date of filing or simila
 ## 14. 🚨 Date. 
 for the date of filing or the date  fill in the current days date in date of filing or similar date . 
 
-### # 15. Critical Signature Filling Instructions
+## 15. 🚨 Street Address.
+In case if the pdf field ask for street address add  complete address in the address  fields 
+### # 16. Critical Signature Filling Instructions
 
 ## MANDATORY REQUIREMENTS
 
@@ -1995,7 +2209,7 @@ IF business_type == "CORPORATION":
 IF business_type NOT IN ["LLC", "CORPORATION"]:
     REJECT SUBMISSION
 ```
-
+### Busuness Purpose 
 ## CRITICAL ENFORCEMENT
 
 - ZERO TOLERANCE FOR INCOMPLETE OR INCORRECT INFORMATION
