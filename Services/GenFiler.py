@@ -196,13 +196,17 @@ class MultiAgentFormFiller:
         flat_json = self.flatten_json(json_data)
         field_context = await self.analyze_field_context(pdf_fields, ocr_text_elements)
 
+        state=""
         # Print available JSON fields for debugging
         print("Available JSON fields:")
         for key in flat_json.keys():
+          print(key, flat_json[key])
+          if key=="State.stateFullDesc" or key=="data.State.stateFullDesc" or key=="data.orderDetails.strapiOrderFormJson.State.stateFullDesc":
 
-            if key=="State.stateFullDesc":
                 print(flat_json[key])
                 state=flat_json[key]
+
+                print(state)
 
         if state=="Pennsylvania":
            print("Running 1")
@@ -624,12 +628,16 @@ class MultiAgentFormFiller:
         return items
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\MichiganLLC.pdf"
-    json_path = "D:\\demo\\Services\\form_data1.json"
+    template_pdf = "D:\\demo\\Services\\MIchiganCorp.pdf"
+    json_path = "D:\\demo\\Services\\form_data.json"
     output_pdf = "D:\\demo\\Services\\fill_smart14.pdf"
 
     with open(json_path, "r", encoding="utf-8") as f:
         json_data = json.load(f)
+
+
+
+
     success = await form_filler.match_and_fill_fields(template_pdf, json_data, output_pdf)
 
     if success:

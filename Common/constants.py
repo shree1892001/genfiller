@@ -481,18 +481,61 @@ FORM CONTROLS AND BUTTONS:
         '''
 PDF_FIELD_MATCHING_PROMPT = """
 Match the following JSON fields to PDF form fields.
-ENTITY NAME FIELDS (MANDATORY):
-- If "Entity Name" or "LLC Name" appears in multiple places in the PDF, ensure that the same entity name is used in each and filled the pdf .
+ Entity Name Fields (EXTREME PRIORITY ALERT - MUST FIX IMMEDIATELY):
 
-- The JSON data may contain multiple entity name fields, e.g., "entity_name", "llc_name".
-- Common PDF field names for entity name include:
-  - "Entity Information - Name"
-  - "1. Limited Liability Company Name"
-  -"LImited Liability Company"
-  - "LLC Name"
-  - "Business Name"
-  - "Company Name"
-- Use the most appropriate entity name value and ensure it appears consistently.
+**🚨 CRITICAL SYSTEM FAILURE ALERT: ENTITY NAME POPULATION 🚨**
+**🚨 ALL PREVIOUS APPROACHES HAVE FAILED - THIS IS A SEVERE ISSUE 🚨**
+
+**THE PROBLEM:**
+- The agent is CONSISTENTLY FAILING to populate entity name in multiple required locations
+- The agent is only filling ONE entity name field when multiple fields require identical population
+- This is causing COMPLETE FORM REJECTION by government agencies
+
+**MANDATORY REQUIREMENTS - NON-NEGOTIABLE:**
+
+1. **IDENTIFY ALL ENTITY NAME FIELDS:**
+   - - Search the ENTIRE document for ANY field that could hold an entity name
+   - This includes fields labeled: Entity Name, LLC Name, Company Name, Corporation Name, Business Name
+   - This includes ANY field in registration sections, certification sections, or signature blocks requiring the entity name
+   - This includes ANY field in article sections requiring entity name
+   - COUNT THESE FIELDS and list them by UUID
+
+2. **POPULATION PROCEDURE - EXTREME ATTENTION REQUIRED:**
+   - COPY THE EXACT SAME entity name to EVERY identified field
+   - DO NOT SKIP ANY entity name field for ANY reason
+   - After populating, CHECK EACH FIELD again to verify population
+   - VERIFY THE COUNT matches your initial entity name field count
+
+3. **CRITICAL VERIFICATION STEPS - MUST PERFORM:**
+   - After initial population, SCAN THE ENTIRE DOCUMENT AGAIN
+   - Look for ANY unpopulated field that might need the entity name
+   - If found, ADD TO YOUR LIST and populate immediately
+   - Double-check ALL headers, footers, and marginalia for entity name fields
+   - Triple-check signature blocks, certification statements for entity name fields
+
+4. **NO EXCEPTIONS PERMITTED:**
+   - If you only populated ONE entity name field, YOU HAVE FAILED this task
+   - You MUST populate EVERY instance where the entity name is required
+   - MINIMUM acceptable count of populated entity name fields is 2 or more
+
+5. **FINAL VERIFICATION STATEMENT REQUIRED:**
+   - You MUST include: "I have populated the entity name in X different locations (UUIDs: list them all)"
+   - You MUST include: "I have verified NO entity name fields were missed"
+   - You MUST include: "All entity name fields contain exactly the same value"
+
+**EXTRACTION SOURCE (ENTITY NAME):**
+- For LLCs: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
+- For Corporations: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name` or `Corp_Name`
+- Generic path: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+
+**FINAL WARNING:**
+- This is the MOST CRITICAL part of form population
+- Government agencies REJECT forms with inconsistent entity names
+- Multiple instances of the entity name MUST match exactly
+- No exceptions, no exclusions, no oversights permitted
+
+* **FINAL VERIFICATION:**
+  - In your reasoning, explicitly state: "I have verified that ALL entity name fields (total count: X) have been populated with the identical value"
 
 Mailing Address Group (MANDATORY):
    PDF Field Patterns:
@@ -541,7 +584,38 @@ ENTITY NUMBER / ORDER ID MAPPING(MANDATORY) :
   - "Registered_Agent.Address"
 
   :
-- "Organizer Name"
+- 4. 🚨 ORGANIZER DETAILS POPULATION
+if the pdf asked for the Organizer Information then add the below values dont put the values of Registered Agent 
+and if the pdf ask for the contact name then fill in the name of the organizer by properly splitting into first name and last name. 
+
+### Extraction Sources:
+- Name of Organizer : `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name`
+- Phone of Organizer : `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Phone`
+- Email of Organizer: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Email`
+
+Address of the Organizer ::
+ Get the address of the organizer as below: 
+ Address Line 1 : `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_Address_Line_1`
+ CIty: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_City`
+ ZIP: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_Zip_Code`
+get the organizer address from above only 
+
+BUSINESS TYPE SIGNATURE RULES
+   - FOR LLC (Limited Liability Company):
+     * ONLY FILL SIGNATURE with ORGANIZER'S FULL LEGAL NAME
+     * IF NO ORGANIZER NAME IS PROVIDED, TRIGGER A MANDATORY FIELD ERROR
+     * NO EXCEPTIONS ALLOWED
+
+   - FOR CORPORATION:
+     * ONLY FILL SIGNATURE with INCORPORATOR'S FULL LEGAL NAME
+     * IF NO INCORPORATOR NAME IS PROVIDED, TRIGGER A MANDATORY FIELD ERROR
+     * NO EXCEPTIONS ALLOWEDs
+
+
+### Matching Strategies:
+- SEMANTIC FIELD DETECTION
+- MULTI-FIELD POPULATION
+- CONTACT INFORMATION VERIFICATION
 - "Authorized Signature"
 - "Execution"
 -If the form ask for "Signature" or "Organizer Sign"  then add the Organizer name from the json value "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name"
@@ -991,9 +1065,85 @@ I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF
 
 FIELD_MATCHING_PROMPT_UPDATED =  """
       # 🚨 CRITICAL MULTI-SECTION PDF FORM POPULATION PROTOCOL: Michigan LLC Articles of Organization
-
+  match the fields basde on semantic matching include low confidence matches as well . 
 ## 1. 🔍 CORE POPULATION STRATEGY
+Core Population Strategy
 
+Effective Date of Filing
+
+If the PDF field asks for the effective date of filing, populate it with the current date.
+
+Entity Name Fields (Critical)
+
+Search for any field labeled: Entity Name, LLC Name, Company Name, Corporation Name, Business Name.
+
+Populate all instances of entity name using the value from data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name.
+
+Ensure all fields containing the entity name are populated identically.
+
+Confirm through validation that no entity name fields are left blank.
+
+Registered Agent Information
+
+Identify and populate the registered agent name using data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name.
+
+If the registered agent is an entity, select the commercial entity checkbox.
+
+If the registered agent is an individual, select the individual checkbox.
+
+Address population for registered agent:
+
+Street Address: Registered_Agent.RA_Address.RA_Address_Line_1
+
+City: Registered_Agent.RA_Address.RA_City
+
+State: Registered_Agent.RA_Address.RA_State
+
+ZIP Code: Registered_Agent.RA_Address.RA_Zip_Code
+
+Organizer Information
+
+If the form requires organizer details, populate as follows:
+
+Organizer Name: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name
+
+Organizer Phone: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Phone
+
+Organizer Email: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Email
+
+Address of the Organizer:
+
+Address Line 1: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_Address_Line_1
+
+City: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_City
+
+ZIP Code: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Address.Org_Zip_Code
+
+Contact Information
+
+Use the following values for contact information:
+
+First Name: data.contactDetails.firstName
+
+Last Name: data.contactDetails.lastName
+
+Email: data.contactDetails.emailId
+
+Phone: data.contactDetails.phoneNumber
+
+If a field asks for a combined contact name, concatenate first and last names.
+
+Filing Date
+
+Populate the filing date using the current date if a filing date field is detected.
+
+Validation and Final Checks
+
+Perform a thorough validation to ensure all required fields are populated.
+
+Verify no fields are left blank, and the correct data is mapped to each field.
+
+Ensure accurate field separation for address components and correct checkbox selection.
 ### Entity Name Population [EXTREME PRIORITY]
 - MANDATORY: Identify ALL entity name fields
 - CRITICAL REQUIREMENT: Populate EVERY entity name field IDENTICALLY
@@ -1004,7 +1154,7 @@ FIELD_MATCHING_PROMPT_UPDATED =  """
 - MUST include "Limited Liability Company" or "L.L.C." or "L.C."
 
 ## 2. 🚨 EFFECTIVE DATE POPULATION
-- MANDATORY: Use CURRENT DATE
+- MANDATORY: Use CURRENT DATE in the date format only. 
 - Match PDF's specific date format exactly
 - Separate day, month, year if required by form
 
@@ -1090,11 +1240,408 @@ FIELD_MATCHING_PROMPT_UPDATED =  """
 - PRECISE Contact Information
 - COMPREHENSIVE Verification
 
+## Michigan Articles of Incorporation - Comprehensive Filing Prompt
 
+### CORPORATION NAME
+- Full Corporate Name (MUST include Corporation, Company, Incorporated, Limited, or abbreviation Corp., Co., Inc., or Ltd.):
+[FULL CORPORATE NAME]
+
+### CURRENT DATE
+- Filing Date: [CURRENT DATE: Friday, March 28, 2025]
+- Proposed Effective Date: [CURRENT DATE: Friday, March 28, 2025 (within 90 days of filing)]
+
+### ARTICLE I: CORPORATE PURPOSE
+- Primary Business Purpose (Detailed Description):
+[DESCRIBE BUSINESS ACTIVITIES IN GENERAL TERMS]
+
+### ARTICLE III: AUTHORIZED SHARES
+1. Total Authorized Shares:
+- Number of Common Shares: [RECOMMENDED: 10,000 shares]
+  - Rationale: Standard for small to medium businesses
+  - Allows flexibility for future growth
+  - Keeps initial filing fees at the lowest tier ($50)
+
+- Number of Preferred Shares: [NUMBER - Optional]
+
+2. Detailed Share Rights, Preferences, and Limitations:
+[DESCRIBE RIGHTS FOR COMMON AND PREFERRED SHARES]
+- Voting Rights
+- Dividend Preferences
+- Liquidation Priorities
+- Any Special Conditions
+
+### ARTICLE IV: REGISTERED OFFICE DETAILS
+1. Physical Registered Office Address:
+- Street Address: [FULL STREET ADDRESS]
+- City: [CITY]
+- State: Michigan
+- ZIP Code: [5-DIGIT ZIP CODE]
+
+2. Mailing Address (if different):
+- Mailing Address: [STREET/PO BOX]
+- City: [CITY]
+- State: Michigan
+- ZIP Code: [5-DIGIT ZIP CODE]
+
+### ARTICLE V: INCORPORATOR INFORMATION
+Incorporator 1:
+- Full Name: [FIRST] [LAST]
+- Residence/Business Address: [FULL ADDRESS]
+- City: [CITY]
+- State: [STATE]
+- ZIP Code: [5-DIGIT ZIP CODE]
+
+[REPEAT FOR ADDITIONAL INCORPORATORS IF NEEDED]
+
+### OPTIONAL ARTICLES
+1. Compromise/Reorganization Provisions (Optional):
+[DETAILED DESCRIPTION IF APPLICABLE]
+
+2. Shareholder Consent Procedures (Optional):
+[SPECIFIC CONSENT MECHANISM DETAILS]
+
+### INCORPORATION DETAILS
+- Desired Expedited Service: 
+  [ ] 24-hour service ($50)
+  [ ] Same-day service ($100-$200)
+  [ ] Two-hour service ($500)
+  [ ] One-hour service ($1000)
+
+### FEE CALCULATION
+Authorized Shares Fee:
+- 1-60,000 shares: $50 ✓ (Recommended tier for 10,000 shares)
+- 60,001-1,000,000 shares: $100
+- 1,000,001-5,000,000 shares: $300
+- 5,000,001-10,000,000 shares: $500
+- Over 10,000,000 shares: $500 for first 10M, plus $1000 for each additional 10M
+
+Nonrefundable Filing Fee: $10.00
+
+Total Fees: $60.00 (Recommended)
+
+[REMAINING SECTIONS AS IN PREVIOUS PROMPT]
+### FINAL CERTIFICATION
+I/We certify that the information provided is true and accurate to the best of my/our knowledge.
+
+Incorporator Signatures:
+1. [SIGNATURE] Date: [DATE]
+2. [SIGNATURE] Date: [DATE]
+
+### IMPORTANT NOTES
+- Ensure all information is legible
+- Include all required documentation
+- Double-check all details before submission
+- Retain a copy for your records
 ## 🚨 ULTIMATE WARNING
 - ABSOLUTE PRECISION REQUIRED
 - ZERO TOLERANCE FOR ERRORS
 - GOVERNMENT FORM - MAXIMUM ACCURACY MANDATORY
+
+
+Critical System Requirements
+0. ZERO TOLERANCE FOR ERRORS
+CRITICAL SYSTEM COMPLIANCE NOTICE:
+
+EVERY field must be correctly populated with 100% accuracy
+ANY oversight will result in COMPLETE FORM REJECTION
+NO EXCEPTIONS for any field, regardless of perceived importance
+VALIDATION REQUIRED for every populated field
+
+1. Form Identification & Orientation
+IMMEDIATE ACTION REQUIRED:
+
+VERIFY form is Michigan Articles of Incorporation (CSCL/CD-500)
+LOCATE all mandatory fields and optional sections
+IDENTIFY signature blocks and date fields
+SCAN for article sections (I through VII+)
+CONFIRM all pages are processed
+
+2. Entity Name Fields (SEVERE PRIORITY)
+🚨 ABSOLUTE CRITICAL SYSTEM PRIORITY 🚨
+MANDATORY REQUIREMENTS:
+
+COMPREHENSIVE ENTITY NAME FIELD IDENTIFICATION:
+
+SCAN document for ALL possible corporation name fields:
+
+Article I section (PRIMARY LOCATION)
+Any header/footer entity name references
+Signature blocks containing entity name
+Certification sections requiring corporation name
+ANY field labeled "Name of the corporation"
+
+
+ENUMERATE all identified fields with UUIDs
+RECORD exact location descriptions for each field
+
+
+ZERO-DEFECT POPULATION PROCESS:
+
+EXTRACT corporation name from: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name
+VALIDATE extracted name meets legal formation requirements
+ENSURE name contains appropriate corporate designation ("Corporation", "Incorporated", "Company", "Limited" or "Corp.", "Inc.", "Co.", "Ltd.")
+PROPAGATE identical name to EVERY identified field
+PERFORM field-by-field verification after population
+CONFIRM NO TRUNCATION in any field
+
+
+MULTI-PHASE VERIFICATION PROCEDURE:
+
+INITIAL SCAN: Count and populate all obvious entity name fields
+SECONDARY SCAN: Look for contextual fields that might require entity name
+TERTIARY SCAN: Document-wide search for any missed fields
+FINAL VERIFICATION: Cross-reference all populated fields for consistency
+
+
+CORPORATION NAME FIELD FAILURE MITIGATION:
+
+If ANY corporation name field is missed: IMMEDIATE SYSTEM FAILURE
+If corporation name inconsistencies exist: IMMEDIATE SYSTEM FAILURE
+If name appears truncated anywhere: IMMEDIATE SYSTEM FAILURE
+If name lacks proper corporate designation: IMMEDIATE SYSTEM FAILURE
+
+
+
+3. Registered Agent Information (Extreme Priority)
+🚨 AGENT DETERMINATION PROTOCOL 🚨
+
+AGENT TYPE CLASSIFICATION - CRITICAL PARAMETER:
+
+EXTRACT agent information from: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name
+ANALYZE for corporate identifiers ("Inc", "LLC", "Corp", "Company")
+CLASSIFY as either:
+
+INDIVIDUAL AGENT (no corporate identifiers)
+ENTITY/COMMERCIAL AGENT (contains corporate identifiers)
+
+
+
+
+INDIVIDUAL AGENT HANDLING:
+
+POPULATE "Name of the resident agent" with RA_Name
+ENSURE no address information contaminates name field
+VERIFY full name appears without truncation
+
+
+ENTITY/COMMERCIAL AGENT HANDLING:
+
+POPULATE "Name of the resident agent" with full entity name
+ENSURE full legal entity name appears exactly as provided
+VERIFY entity designation (Inc, LLC, etc.) is included
+
+
+CRITICAL ADDRESS SEPARATION PROTOCOL:
+
+EXTRACT address components from: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address
+ATOMIZE into discrete components:
+
+Street: RA_Address_Line_1 → Populate "Street address of the location of the registered office"
+City: RA_City → Populate city field
+State: Always "Michigan" or "MI" as appropriate
+ZIP: RA_Zip_Code → Populate ZIP field
+
+
+VALIDATE each component appears in CORRECT FIELD ONLY
+VERIFY NO CROSS-CONTAMINATION between address components
+
+
+REGISTERED OFFICE MAILING ADDRESS:
+
+If different than registered office address, populate from same source
+If same as registered office, populate identical information
+VERIFY both addresses have consistent format
+
+
+
+4. Articles of Incorporation Structure
+🚨 CRITICAL ARTICLE POPULATION PROTOCOL 🚨
+
+ARTICLE I - CORPORATION NAME:
+
+ALREADY ADDRESSED in Entity Name protocol
+REVALIDATE population here
+
+
+ARTICLE II - CORPORATE PURPOSE:
+
+DEFAULT TEXT: "The purpose or purposes for which the corporation is formed is to engage in any activity within the purposes for which corporations may be formed under the Business Corporation Act of Michigan."
+POPULATE exactly as shown, with no modifications
+VERIFY text appears without truncation
+
+
+ARTICLE III - REGISTERED AGENT:
+
+ALREADY ADDRESSED in Registered Agent protocol
+REVALIDATE population here
+
+
+ARTICLE IV - AUTHORIZED SHARES:
+
+EXTRACT share information:
+
+Number: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.SI_Number_of_Shares
+Par Value: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Shares_Par_Value
+
+
+POPULATE "Common Shares" field with exact number of shares
+LEAVE "Preferred Shares" field blank unless specifically defined
+LEAVE rights/preferences statement blank unless specifically defined
+VALIDATE numeric values appear correctly formatted
+
+
+ARTICLE V - INCORPORATOR INFORMATION:
+
+EXTRACT from: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Incorporator_Information.Incorporator_Details.Inc_Name
+POPULATE incorporator name field
+EXTRACT address from:
+
+Inc_Address.Inc_Address_Line_1
+Inc_Address.Inc_City
+Inc_Address.Inc_State
+Inc_Address.Inc_Zip_Code
+
+
+POPULATE complete address with proper formatting
+VERIFY all incorporator fields are complete
+
+
+ARTICLE VI & VII (OPTIONAL):
+
+RETAIN these optional articles unless instructed to delete
+If form indicates "Delete if not applicable," keep by default
+FORMAT according to original document layout
+
+
+
+5. Signature Block & Date Fields
+🚨 SIGNATURE VALIDATION PROTOCOL 🚨
+
+INCORPORATOR SIGNATURE:
+
+USE incorporator name for signature reference
+LEAVE actual signature field blank (for manual signing)
+POPULATE any typed name fields with incorporator name
+
+
+DATE FIELDS:
+
+USE current date: Saturday, March 29, 2025
+FORMAT according to form requirements:
+
+If MM/DD/YYYY format: 03/29/2025
+If spelled month: March 29, 2025
+If separate fields: Populate day (29), month (March), year (2025) accordingly
+
+
+POPULATE ALL date fields with current date
+
+
+PREPARER INFORMATION:
+
+EXTRACT from:
+
+Name: data.contactDetails.firstName + data.contactDetails.lastName
+Phone: data.contactDetails.phoneNumber
+
+
+FORMAT phone number with area code: (XXX) XXX-XXXX
+POPULATE all preparer fields completely
+
+
+
+6. Fee Calculation & Payment Information
+FEES CALCULATION PROTOCOL:
+
+IDENTIFY FEE FIELDS:
+
+LOCATE any fields related to organization fees
+IDENTIFY fee calculation table on form
+
+
+CALCULATE BASED ON SHARES:
+
+REFERENCE fee table based on number of authorized shares:
+
+1-60,000 shares: $50.00
+60,001-1,000,000 shares: $100.00
+1,000,001-5,000,000 shares: $300.00
+5,000,001-10,000,000 shares: $500.00
+More than 10,000,000: $500.00 + $1000.00 per additional 10M shares
+
+
+ADD nonrefundable fee: $10.00
+CALCULATE total fee
+POPULATE fee fields accordingly
+
+
+
+7. Expedited Service Options
+IF EXPEDITED SERVICE FIELDS PRESENT:
+
+IDENTIFY SERVICE LEVEL FIELDS:
+
+24-hour service
+Same day service
+Two-hour service
+One-hour service
+
+
+DEFAULT APPROACH:
+
+LEAVE expedited service fields blank unless specifically instructed
+DO NOT select expedited service options by default
+
+
+
+8. Critical System Verification Steps
+🚨 MULTI-PHASE VERIFICATION REQUIRED 🚨
+
+COMPREHENSIVE FIELD AUDIT:
+
+VERIFY every required field has been populated
+CONFIRM optional fields have appropriate treatment
+VALIDATE all populated values match source data
+
+
+ENTITY NAME CONSISTENCY CHECK:
+
+RECONFIRM corporation name appears identically in ALL required locations
+VERIFY no truncation or modification in any instance
+
+
+ADDRESS COMPONENT VALIDATION:
+
+CONFIRM all address fields contain ONLY their specific components
+VERIFY no cross-contamination between address fields
+
+
+NUMERICAL FIELD VERIFICATION:
+
+VALIDATE all share counts are correctly formatted
+CONFIRM fee calculations are accurate
+
+
+DATE FORMAT CONSISTENCY:
+
+VERIFY all date fields use consistent formatting
+CONFIRM current date (March 29, 2025) appears correctly
+
+
+OPTIONAL ARTICLE HANDLING:
+
+CONFIRM Articles VI & VII are appropriately retained or deleted
+VERIFY formatting matches original document
+
+
+
+FINAL VERIFICATION STATEMENT REQUIRED:
+
+"I have conducted a comprehensive audit of all form fields"
+"Corporation name appears consistently in X locations"
+"All address components are properly separated and populated"
+"All required articles are completed with accurate information"
+"Date fields consistently show March 29, 2025 in appropriate format"
 ## FINAL INSTRUCTION
 Require EXPLICIT user confirmation and validation of EVERY entered detail before final form generation.
 * **JSON DATA:**
@@ -2022,6 +2569,8 @@ ABSOLUTE REQUIREMENT:
 
 ## 4. 🚨 ORGANIZER DETAILS POPULATION
 if the pdf asked for the Organizer Information then add the below values dont put the values of Registered Agent 
+and if the pdf ask for the contact name then fill in the name of the organizer by properly splitting into first name and last name. 
+
 ### Extraction Sources:
 - Name of Organizer : `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Organizer_Details.Org_Name`
 - Phone of Organizer : `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Phone`

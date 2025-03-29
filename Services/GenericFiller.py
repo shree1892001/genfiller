@@ -207,3 +207,21 @@ class MultiAgentFormFiller:
 
 
 
+async def main():
+    form_filler = MultiAgentFormFiller()
+    template_pdf = "D:\\demo\\Services\\MIchiganCorp.pdf"
+    json_path = "D:\\demo\\Services\\form_data.json"
+    output_pdf = "D:\\demo\\Services\\fill_smart14.pdf"
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        json_data = json.load(f)
+    success = await form_filler.match_and_fill_fields(template_pdf, json_data, output_pdf)
+
+    if success:
+        print(f"✅ PDF successfully processed: {output_pdf}")
+    else:
+        print(f"❌ PDF processing failed. Please check the output file and logs.")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

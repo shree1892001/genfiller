@@ -10,20 +10,19 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-# Custom Form Filler Services
 from Services.GenericFiller import MultiAgentFormFiller as StandardFormFiller
 from Services.GenFiler import MultiAgentFormFiller as OCRFormFiller
 
 app = FastAPI(title="Smart PDF Form Filler API",
               description="API for intelligent PDF form filling with automatic OCR detection")
 
-
+origins = ['*']
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class FieldMatch(BaseModel):
@@ -33,7 +32,6 @@ class FieldMatch(BaseModel):
     suggested_value: Any = Field(None, description="Value suggested for the field")
     reasoning: str = Field(None, description="Reasoning behind the match")
 
-
 class FormResponse(BaseModel):
     status: str = Field(..., description="Processing status")
     message: str = Field(..., description="Detailed processing message")
@@ -42,40 +40,52 @@ class FormResponse(BaseModel):
     field_matches: List[FieldMatch] = Field(default_factory=list, description="Field matching details")
     error_details: Optional[str] = Field(None, description="Error details if processing failed")
 
-
 class PDFProcessingService:
     @staticmethod
     async def analyze_form_fields(pdf_path: str) -> tuple[bool, list]:
-        """Advanced form field analysis with comprehensive detection"""
+        """Advanced form field analysis with improved OCR detection logic"""
         try:
             doc = fitz.open(pdf_path)
             fields = []
             total_interactive_fields = 0
+            total_pages = len(doc)
+
+            filled_fields = 0
+            empty_fields = 0
 
             for page in doc:
                 for widget in page.widgets():
                     if widget.field_name:
                         total_interactive_fields += 1
+                        field_value = widget.field_value
+
+                        if field_value:
+                            filled_fields += 1
+                        else:
+                            empty_fields += 1
+
                         fields.append({
                             'name': widget.field_name,
                             'type': widget.field_type,
-                            'value': widget.field_value
+                            'value': field_value
                         })
 
             doc.close()
 
-            # Sophisticated OCR need detection
             needs_ocr = (
-                    total_interactive_fields < 3 or
-                    any(len(field['name']) > 30 for field in fields)
+                total_interactive_fields == 0 or
+                (total_pages > 2 and total_interactive_fields < 3) or
+                (total_interactive_fields > 0 and empty_fields == total_interactive_fields)
             )
+
+            print(f"OCR Detection Analysis: pages={total_pages}, fields={total_interactive_fields}, "
+                  f"filled={filled_fields}, empty={empty_fields}, needs_ocr={needs_ocr}")
 
             return needs_ocr, fields
 
         except Exception as e:
             print(f"Field analysis error: {e}")
             return True, []
-
 
 class TemporaryFileManager:
     @staticmethod
@@ -93,7 +103,6 @@ class TemporaryFileManager:
                 print(f"Cleaned up file: {file_path}")
         except Exception as e:
             print(f"File cleanup error for {file_path}: {e}")
-
 
 class PDFFormFillerAPI:
     def __init__(self):
@@ -126,7 +135,9 @@ class PDFFormFillerAPI:
             permanent_path = ""
 
             try:
-                # Generate unique filenames
+
+                print(f"Processing form request: filename={pdf_file.filename}, force_ocr={force_ocr}")
+
                 temp_input_path = TemporaryFileManager.generate_unique_filename(
                     prefix="temp_input_", extension=".pdf"
                 )
@@ -134,31 +145,30 @@ class PDFFormFillerAPI:
                     prefix="filled_", extension=".pdf"
                 )
 
-                # Save input PDF
                 with open(temp_input_path, "wb") as f:
                     content = await pdf_file.read()
                     f.write(content)
 
-                # Parse form data
                 json_data = json.loads(form_data)
 
-                # Analyze form structure
                 needs_ocr, fields = await PDFProcessingService.analyze_form_fields(temp_input_path)
-                needs_ocr = needs_ocr or force_ocr
 
-                # Select appropriate form filler
-                form_filler = OCRFormFiller() if needs_ocr else StandardFormFiller()
+                final_ocr_decision = needs_ocr or force_ocr
 
-                # Process form
+                print(f"Final OCR decision: auto_detect={needs_ocr}, force_ocr={force_ocr}, "
+                      f"using_ocr={final_ocr_decision}, fields_count={len(fields)}")
+
+                form_filler = OCRFormFiller() if final_ocr_decision else StandardFormFiller()
+
+                print(f"Selected form filler: {'OCR' if final_ocr_decision else 'Standard'}")
+
                 result = await form_filler.match_and_fill_fields(
                     temp_input_path, json_data, output_path
                 )
 
-                # Ensure output file exists
                 if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
                     raise ValueError("Failed to generate filled PDF")
 
-                # Create permanent storage
                 os.makedirs("filled_forms", exist_ok=True)
                 permanent_path = os.path.join(
                     "filled_forms",
@@ -168,7 +178,8 @@ class PDFFormFillerAPI:
                 )
                 shutil.copy2(output_path, permanent_path)
 
-                # Prepare field matches
+                print(f"Form successfully filled: output={permanent_path}")
+
                 field_matches = [
                     FieldMatch(
                         json_field="processed_form",
@@ -179,16 +190,14 @@ class PDFFormFillerAPI:
                     )
                 ]
 
-                # Schedule cleanup tasks
                 background_tasks.add_task(TemporaryFileManager.cleanup_file, temp_input_path)
                 background_tasks.add_task(TemporaryFileManager.cleanup_file, output_path)
 
-                # Return response based on return_json flag
                 if return_json:
                     return FormResponse(
                         status="success",
                         message="Form processed successfully",
-                        requires_ocr=needs_ocr,
+                        requires_ocr=final_ocr_decision,
                         file_path=permanent_path,
                         field_matches=field_matches
                     )
@@ -200,25 +209,26 @@ class PDFFormFillerAPI:
                     )
 
             except Exception as e:
-                # Comprehensive error handling
+
+                error_msg = str(e)
+                print(f"Form processing error: {error_msg}")
+
                 error_response = FormResponse(
                     status="error",
-                    message=f"Processing failed: {str(e)}",
-                    error_details=str(e),
+                    message=f"Processing failed: {error_msg}",
+                    error_details=error_msg,
                     requires_ocr=False
                 )
 
-                # Cleanup in case of error
-                for path in [temp_input_path, output_path, permanent_path]:
-                    TemporaryFileManager.cleanup_file(path)
+                for path in [temp_input_path, output_path]:
+                    if path and os.path.exists(path):
+                        background_tasks.add_task(TemporaryFileManager.cleanup_file, path)
 
                 raise HTTPException(status_code=500, detail=error_response.dict())
 
     def get_app(self):
         return self.app
 
-
-# API Initialization
 pdf_form_filler_api = PDFFormFillerAPI()
 app = pdf_form_filler_api.get_app()
 
