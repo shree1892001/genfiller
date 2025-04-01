@@ -245,6 +245,7 @@ class MultiAgentFormFiller:
         matches, ocr_matches = [], []
         for attempt in range(max_retries):
             response = await self.agent.run(prompt)
+            print(response.data)
             result = self.parse_ai_response(response.data)
 
             if result:
@@ -628,7 +629,7 @@ class MultiAgentFormFiller:
         return items
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\MIchiganCorp.pdf"
+    template_pdf = "D:\\demo\\Services\\California_LLC.pdf"
     json_path = "D:\\demo\\Services\\form_data.json"
     output_pdf = "D:\\demo\\Services\\fill_smart14.pdf"
 
@@ -641,6 +642,9 @@ async def main():
     success = await form_filler.match_and_fill_fields(template_pdf, json_data, output_pdf)
 
     if success:
+
+
+
         print(f"✅ PDF successfully processed: {output_pdf}")
     else:
         print(f"❌ PDF processing failed. Please check the output file and logs.")

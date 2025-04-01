@@ -652,7 +652,7 @@ PDF_FIELD_MATCHING_PROMPT1 = """I need to fill a PDF form with data from a JSON 
 IMPORTANT INSTRUCTIONS:
 1. For each PDF field, find the most relevant JSON field, even if names are different.
 2. Consider field context (nearby text in the PDF) to understand the purpose of each field
-        
+ 
 3. REGISTERED AGENT INFORMATION (HIGHLY REQUIRED):
    - **Determine Registered Agent Type**: Check if the registered agent is an individual or entity by examining the name in:
      - `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
@@ -810,7 +810,26 @@ Signature fields to target:
 ignature Field Filling Strategy
 Mandatory Signature Field Resolution
 Primary Signature Source
+9. CONTACT INFORMATION PROTOCOL
 
+### Primary Extraction Sources
+- First Name: `data.contactDetails.firstName`
+- Last Name: `data.contactDetails.lastName`
+- Email: `data.contactDetails.emailId`
+- Phone: `data.contactDetails.phoneNumber`
+
+### Fallback: Registered Agent Information
+If primary contact details are not found or incomplete:
+- First Name: `data.registeredAgent.firstName`
+- Last Name: `data.registeredAgent.lastName`
+- Email: `data.registeredAgent.emailId`
+- Phone: `data.registeredAgent.phoneNumber`
+
+### Matching Strategy
+- CONSTRUCT Full Name from available fields
+- Populate ALL Contact Fields when possible
+- SEMANTIC Field Matching for partial data
+- Prioritize primary contact details, fall back to registered agent information only when needed
 Retrieve Organizer Name from:
 
 data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name
@@ -1192,16 +1211,24 @@ Ensure accurate field separation for address components and correct checkbox sel
 
 ## 5. 📞 CONTACT INFORMATION PROTOCOL
 
-### Extraction Sources
+### Primary Extraction Sources
 - First Name: `data.contactDetails.firstName`
 - Last Name: `data.contactDetails.lastName`
 - Email: `data.contactDetails.emailId`
 - Phone: `data.contactDetails.phoneNumber`
 
+### Fallback: Registered Agent Information
+If primary contact details are not found or incomplete:
+- First Name: `data.registeredAgent.firstName`
+- Last Name: `data.registeredAgent.lastName`
+- Email: `data.registeredAgent.emailId`
+- Phone: `data.registeredAgent.phoneNumber`
+
 ### Matching Strategy
-- CONSTRUCT Full Name
-- Populate ALL Contact Fields
-- SEMANTIC Field Matching
+- CONSTRUCT Full Name from available fields
+- Populate ALL Contact Fields when possible
+- SEMANTIC Field Matching for partial data
+- Prioritize primary contact details, fall back to registered agent information only when needed
 
 ## 6. 📊 ADDITIONAL CRITICAL POPULATIONS
 
@@ -1504,6 +1531,53 @@ Inc_Address.Inc_Zip_Code
 
 POPULATE complete address with proper formatting
 VERIFY all incorporator fields are complete
+
+
+ARTICLE VI - President  INFORMATION:
+
+EXTRACT from: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.President_Information.President_Details.Pre_Name
+POPULATE president name field
+EXTRACT address from:
+
+Pre_Address.Pre_Address_Line_1
+Pre_Address.Pre_City
+Pre_Address.Pre_State
+Pre_Address.Pre_Zip_Code
+
+
+POPULATE complete address with proper formatting
+VERIFY all President fields are complete
+
+
+ARTICLE VII - Secretary INFORMATION:
+
+EXTRACT from: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Secretary_Information.Secretary_Details.Sec_Name
+POPULATE Secretary name field
+EXTRACT address from:
+
+Sec_Address.Sec_Address_Line_1
+Sec_Address.Sec_City
+Sec_Address.Sec_State
+Sec_Address.Sec_Zip_Code
+
+
+POPULATE complete address with proper formatting
+VERIFY all Secretary fields are complete
+
+ARTICLE VIII - Director INFORMATION:
+
+EXTRACT from: data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Director_Information.Director_Details.Dir_Name
+POPULATE Director name field
+EXTRACT address from:
+
+Dir_Address.Dir_Address_Line_1
+Dir_Address.Dir_City
+Dir_Address.Dir_State
+Dir_Address.Dir_Zip_Code
+
+
+POPULATE complete address with proper formatting
+VERIFY all Director fields are complete
 
 
 ARTICLE VI & VII (OPTIONAL):
@@ -1854,6 +1928,8 @@ FIELD_MATCHING_PROMPT_UPDATED4 = """
    - All organizers must be listed
    - Natural persons: Full legal name
    - Entities: Full legal name with designator
+   
+
 
 4. EFFECTIVE DATE :
    - Current date in date format 
@@ -1867,6 +1943,27 @@ FIELD_MATCHING_PROMPT_UPDATED4 = """
 6. BENEFIT COMPANY :
    - Check ONLY if applicable
    - Include specific benefits if checked
+   
+7.5. 📞 CONTACT INFORMATION PROTOCOL
+
+### Primary Extraction Sources
+- First Name: `data.contactDetails.firstName`
+- Last Name: `data.contactDetails.lastName`
+- Email: `data.contactDetails.emailId`
+- Phone: `data.contactDetails.phoneNumber`
+
+### Fallback: Registered Agent Information
+If primary contact details are not found or incomplete:
+- First Name: `data.registeredAgent.firstName`
+- Last Name: `data.registeredAgent.lastName`
+- Email: `data.registeredAgent.emailId`
+- Phone: `data.registeredAgent.phoneNumber`
+
+### Matching Strategy
+- CONSTRUCT Full Name from available fields
+- Populate ALL Contact Fields when possible
+- SEMANTIC Field Matching for partial data
+- Prioritize primary contact details, fall back to registered agent information only when needed
 
 ## FIELD-SPECIFIC MAPPING:
 1. LLC Name:

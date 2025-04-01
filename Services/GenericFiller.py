@@ -97,7 +97,7 @@ class MultiAgentFormFiller:
         pdf_fields = await self.extract_pdf_fields(pdf_path)
         flat_json = self.flatten_json(json_data)
 
-        prompt = PDF_FIELD_MATCHING_PROMPT.format(
+        prompt = PDF_FIELD_MATCHING_PROMPT1.format(
             json_data=json.dumps(flat_json, indent=2),
             pdf_fields=json.dumps(list(pdf_fields.keys()), indent=2)
         )
@@ -209,7 +209,7 @@ class MultiAgentFormFiller:
 
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\MIchiganCorp.pdf"
+    template_pdf = "D:\\demo\\Services\\California_LLC.pdf"
     json_path = "D:\\demo\\Services\\form_data.json"
     output_pdf = "D:\\demo\\Services\\fill_smart14.pdf"
 
