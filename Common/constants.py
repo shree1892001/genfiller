@@ -5,7 +5,7 @@ API_KEY_1 ="AIzaSyBdgesVDKSwGPoJrF0lh5sA4iRWJOEUQwc"
 API_KEY_2 ="AIzaSyBdgesVDKSwGPoJrF0lh5sA4iRWJOEUQwc"
 API_KEY_3 ="AIzaSyCTqp_VyTh5n9GKrVETOO8SsKng76FkqYo"
 API_KEY_4 ="AIzaSyBdgesVDKSwGPoJrF0lh5sA4iRWJOEUQwc"
-
+API_KEY_5="AIzaSyCNcSu1m0SLKPlb78q4g5L3TyUZVIkZudo"
 
 
 FIELD_MATCHING_PROMPT = """
@@ -685,20 +685,61 @@ IMPORTANT INSTRUCTIONS:
      - "Registered_Agent.Address"
    - If an agent's name is provided as a full name string, split it into first and last names. Example: if agent name is "CC tech Filings" then first name is "CC" and last Name would be "tech Filings".
 
-4. ENTITY NAME FIELDS (MANDATORY):
-   - If "Entity Name" or "LLC name" or "limited liability company" or similar appears in multiple places in the PDF, ensure that the same entity name is used consistently enter the company name only if the field has the label "entity name or relevant".
-   - The JSON data may contain multiple "entity name" fields, e.g., "entity_name", "llc_name","Corporation Name ,"Corp_Name, "Corporation_Name".
-   - Common PDF field names for entity name include:
-     - "Entity Information - Name"
-     - "1. Limited Liability Company Name"
-     - "Limited Liability Company"
-     - "LLC Name"
-     - "Corporation"
-     - "Corp" 
-     - "Incorporation Name" 
-     - "Business Name"
-     - "Company Name"
-   - Use the most appropriate entity name value and ensure it appears consistently.
+4.Entity Name Fields (EXTREME PRIORITY ALERT - MUST FIX IMMEDIATELY):
+
+**🚨 CRITICAL SYSTEM FAILURE ALERT: ENTITY NAME POPULATION 🚨**
+**🚨 ALL PREVIOUS APPROACHES HAVE FAILED - THIS IS A SEVERE ISSUE 🚨**
+
+**THE PROBLEM:**
+- The agent is CONSISTENTLY FAILING to populate entity name in multiple required locations
+- The agent is only filling ONE entity name field when multiple fields require identical population
+- This is causing COMPLETE FORM REJECTION by government agencies
+
+**MANDATORY REQUIREMENTS - NON-NEGOTIABLE:**
+
+1. **IDENTIFY ALL ENTITY NAME FIELDS:**
+   - - Search the ENTIRE document for ANY field that could hold an entity name
+   - This includes fields labeled: Entity Name, LLC Name, Company Name, Corporation Name, Business Name
+   - This includes ANY field in registration sections, certification sections, or signature blocks requiring the entity name
+   - This includes ANY field in article sections requiring entity name
+   - COUNT THESE FIELDS and list them by UUID
+
+2. **POPULATION PROCEDURE - EXTREME ATTENTION REQUIRED:**
+   - COPY THE EXACT SAME entity name to EVERY identified field
+   - DO NOT SKIP ANY entity name field for ANY reason
+   - After populating, CHECK EACH FIELD again to verify population
+   - VERIFY THE COUNT matches your initial entity name field count
+
+3. **CRITICAL VERIFICATION STEPS - MUST PERFORM:**
+   - After initial population, SCAN THE ENTIRE DOCUMENT AGAIN
+   - Look for ANY unpopulated field that might need the entity name
+   - If found, ADD TO YOUR LIST and populate immediately
+   - Double-check ALL headers, footers, and marginalia for entity name fields
+   - Triple-check signature blocks, certification statements for entity name fields
+
+4. **NO EXCEPTIONS PERMITTED:**
+   - If you only populated ONE entity name field, YOU HAVE FAILED this task
+   - You MUST populate EVERY instance where the entity name is required
+   - MINIMUM acceptable count of populated entity name fields is 2 or more
+
+5. **FINAL VERIFICATION STATEMENT REQUIRED:**
+   - You MUST include: "I have populated the entity name in X different locations (UUIDs: list them all)"
+   - You MUST include: "I have verified NO entity name fields were missed"
+   - You MUST include: "All entity name fields contain exactly the same value"
+
+**EXTRACTION SOURCE (ENTITY NAME):**
+- For LLCs: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
+- For Corporations: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name` or `Corp_Name`
+- Generic path: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+
+**FINAL WARNING:**
+- This is the MOST CRITICAL part of form population
+- Government agencies REJECT forms with inconsistent entity names
+- Multiple instances of the entity name MUST match exactly
+- No exceptions, no exclusions, no oversights permitted
+
+* **FINAL VERIFICATION:**
+  - In your reasoning, explicitly state: "I have verified that ALL entity name fields (total count: X) have been populated with the identical value"
 
 5. ADDRESSES (MANDATORY):
    - Distinguish between different address types (mailing, physical, agent, principal office)
@@ -959,21 +1000,82 @@ I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF
     6. Pay special attention to UUIDs in the form - these need to be matched based on context.
     7. Create matches for ALL PDF fields if possible - aim for 100% coverage.
     8. Be particularly careful with matching text from OCR with the corresponding PDF fields.
-    
-    ENTITY NAME FIELDS (MANDATORY):
-    - If "Entity Name" or "LLC Name" appears in multiple places in the PDF, ensure that the same entity name is used consistently.
-    - The JSON data may contain multiple entity name fields, e.g., "entity_name", "llc_name","Corporation Name ,"Corp_Name, "Corporation_Name".
-    - Common PDF field names for entity name include:
-      - "Entity Information - Name"
-      - "1. Limited Liability Company Name"
-      - "Limited Liability Company"
-      - "LLC Name"
-      -"Corporation"
-      -"Corp" 
-      -"Incorporation Name" 
-      
-      - "Business Name"
-      - "Company Name"
+    3. 🏢 REGISTERED AGENT PROTOCOL
+
+### Agent Type Identification
+- DETERMINE Agent Type:
+  * Individual Agent: First/Last Name WITHOUT corporate identifiers
+  * Commercial Agent: Names with "Inc", "LLC", "Corp", "Company"
+
+### Extraction Sources
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+- Address Components:
+  * Line 1: `Registered_Agent.RA_Address.RA_Address_Line1`
+  * City: `Registered_Agent.RA_Address.RA_City`
+  * State: `Registered_Agent.RA_Address.RA_State`
+  * ZIP: `Registered_Agent.RA_Address.RA_Zip_Code`
+
+### Contact Information Field
+- Include Registered Agent details in Contact Information:
+  * Agent Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+  * Agent Address: Combine components from RA_Address fields
+  * Agent Type: Include classification (Individual/Commercial) based on name analysis
+
+     2. Entity Name Fields (EXTREME PRIORITY ALERT - MUST FIX IMMEDIATELY):
+
+**🚨 CRITICAL SYSTEM FAILURE ALERT: ENTITY NAME POPULATION 🚨**
+**🚨 ALL PREVIOUS APPROACHES HAVE FAILED - THIS IS A SEVERE ISSUE 🚨**
+
+**THE PROBLEM:**
+- The agent is CONSISTENTLY FAILING to populate entity name in multiple required locations
+- The agent is only filling ONE entity name field when multiple fields require identical population
+- This is causing COMPLETE FORM REJECTION by government agencies
+
+**MANDATORY REQUIREMENTS - NON-NEGOTIABLE:**
+
+1. **IDENTIFY ALL ENTITY NAME FIELDS:**
+   - - Search the ENTIRE document for ANY field that could hold an entity name
+   - This includes fields labeled: Entity Name, LLC Name, Company Name, Corporation Name, Business Name
+   - This includes ANY field in registration sections, certification sections, or signature blocks requiring the entity name
+   - This includes ANY field in article sections requiring entity name
+   - COUNT THESE FIELDS and list them by UUID
+
+2. **POPULATION PROCEDURE - EXTREME ATTENTION REQUIRED:**
+   - COPY THE EXACT SAME entity name to EVERY identified field
+   - DO NOT SKIP ANY entity name field for ANY reason
+   - After populating, CHECK EACH FIELD again to verify population
+   - VERIFY THE COUNT matches your initial entity name field count
+
+3. **CRITICAL VERIFICATION STEPS - MUST PERFORM:**
+   - After initial population, SCAN THE ENTIRE DOCUMENT AGAIN
+   - Look for ANY unpopulated field that might need the entity name
+   - If found, ADD TO YOUR LIST and populate immediately
+   - Double-check ALL headers, footers, and marginalia for entity name fields
+   - Triple-check signature blocks, certification statements for entity name fields
+
+4. **NO EXCEPTIONS PERMITTED:**
+   - If you only populated ONE entity name field, YOU HAVE FAILED this task
+   - You MUST populate EVERY instance where the entity name is required
+   - MINIMUM acceptable count of populated entity name fields is 2 or more
+
+5. **FINAL VERIFICATION STATEMENT REQUIRED:**
+   - You MUST include: "I have populated the entity name in X different locations (UUIDs: list them all)"
+   - You MUST include: "I have verified NO entity name fields were missed"
+   - You MUST include: "All entity name fields contain exactly the same value"
+
+**EXTRACTION SOURCE (ENTITY NAME):**
+- For LLCs: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name`
+- For Corporations: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name` or `Corp_Name`
+- Generic path: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+
+**FINAL WARNING:**
+- This is the MOST CRITICAL part of form population
+- Government agencies REJECT forms with inconsistent entity names
+- Multiple instances of the entity name MUST match exactly
+- No exceptions, no exclusions, no oversights permitted
+
+* **FINAL VERIFICATION:**
+  - In your reasoning, explicitly state: "I have verified that ALL entity name fields (total count: X) have been populated with the identical value"
     
     MAILING ADDRESS GROUP (MANDATORY):
     - PDF Field Patterns:
@@ -1039,11 +1141,8 @@ I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF
     PDF FORM FIELDS (with UUIDs):
     {pdf_fields}
     
-    OCR TEXT ELEMENTS:
-    {ocr_elements}
     
-    FIELD CONTEXT (NEARBY TEXT):
-    {field_context}
+    
     
     Respond with a valid JSON in this format:
     {{
@@ -1056,27 +1155,10 @@ I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF
                 "reasoning": "Matched based on..."
             }}
         ],
-        "ocr_matches": [
+        
+  
 
-    {{
 
-      "json_field": "field.name.in.json",
-
-      "ocr_text": "Extracted text from OCR",
-
-      "pdf_field": "uuid_of_pdf_field",
-
-      "confidence": 0.8,
-
-      "suggested_value": "Value to annotate",
-
-      "reasoning": "Why this OCR text matches this field"
-
-    }}
-
-  ]
-
-}}
     }}
     """
 

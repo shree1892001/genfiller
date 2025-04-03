@@ -710,16 +710,11 @@ app = FastAPI(
     description="API for intelligent PDF form filling with automatic OCR detection"
 )
 
-ALLOWED_ORIGINS = [
-    "https://www.redberyltest.in",
-    "https://staging.redberyltest.in",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-]
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -845,7 +840,7 @@ class PDFFormFillerAPI:
 
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=ALLOWED_ORIGINS,
+            allow_origins=["*"],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"]
@@ -1003,7 +998,6 @@ if __name__ == "__main__":
     import uvicorn
 
     # Specify the paths to your SSL certificate and key files
-    ssl_certfile = "D:\\demo\\cert.pem"
-    ssl_keyfile = "D:\\demo\\key.pem"
+
 
     uvicorn.run(app, host="0.0.0.0", port=8005, ssl_certfile=ssl_certfile, ssl_keyfile=ssl_keyfile)
