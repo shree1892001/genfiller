@@ -1095,15 +1095,34 @@ I need to fill a PDF form with data from a JSON object. Match JSON fields to PDF
     - JSON Field Patterns:
       - "orderId", "registrationNumber", any field ending with "Id" or "Number"
     
-    REGISTERED AGENT INFORMATION (MANDATORY):
-     REGISTERED AGENT fields should be filled with registered agent data (like registeredAgent.name)
-    - Match agent names using:
-      - "Registered Agent Name", "Agent's Name", "Agent Street Address","Register Agent Name","Register Agent" ,"Registered Agent".
-      "Initial Registered Agent"
-    - Prioritize JSON fields:
-      - "data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name", "RA_Address_Line_1"
-    
-    SIGNATURE & ORGANIZER INFORMATION:
+    REGISTERED AGENT INFORMATION (HIGHLY REQUIRED):
+   - **Determine Registered Agent Type**: Check if the registered agent is an individual or entity by examining the name in:
+     - `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+     - If the name appears to be a person's name (contains first and last name without corporate identifiers) → treat as individual registered agent
+     - If the name contains business identifiers like "Inc", "LLC", "Corp", "Company", "Corporation", "Service", etc. → treat as entity registered agent
+
+   - **For Individual Registered Agent**:
+     - Use the value from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name` for fields labeled "Individual Registered Agent", "Registered Agent Name", "Natural Person", etc.
+     - Fill individual registered agent checkboxes/radio buttons if present
+     - Always fill address fields for individual registered agents using:
+       - `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address_Line_1`
+       - `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address_Line_2` (if available)
+       - `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_City`
+       - `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_State`
+       - `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Zip`
+
+   - **For Commercial/Entity Registered Agent**:
+     - Use the value from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name` for fields labeled "Commercial Registered Agent", "Entity Registered Agent", "Name of Registered Agent Company", etc.
+     - Fill commercial/entity registered agent checkboxes/radio buttons if present
+     - DO NOT fill address fields for commercial registered agents unless specifically stated as required
+     - Address fields for corporate/entity agents are considered optional by default
+     - Only if the form explicitly indicates that a commercial agent address is required, then use:
+       - `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address_Line_1`
+       - And other address fields as needed
+
+   - For registered agent name fields, get the value from `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name` and fill in the PDF field "initial registered agent" or "registered agent" or similar.
+
+   - If an agent's name is provided as a full name string, split it into first and last names. Example: if agent name is "CC tech Filings" then first name is "CC" and last Name would be "tech Filings".    SIGNATURE & ORGANIZER INFORMATION:
     - Match the following fields:
       - "Organizer Name", "Authorized Signature"
       - JSON field: "Organizer_Information.Org_Name"
