@@ -90,13 +90,13 @@ def unflatten_json(flat_dict: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-SYSTEM_PROMPT = FILER_PROMPT
+
 
 class GeminiFormFiller:
     def __init__(self, api_key: str):
         self.agent = Agent(
             model=GeminiModel("gemini-1.5-flash", api_key=api_key),
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt="You are an expert at mapping PDF fields to JSON keys and filling them immediately.",
         )
         self.processing_history = []
 

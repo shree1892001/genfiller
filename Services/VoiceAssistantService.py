@@ -294,7 +294,7 @@ class MultilingualAssistant:
 
         # Generate startup-specific questions
         self.speak("Generating startup-specific screening questions...")
-        prompt = f"""Generate 8-10 pre-screening questions specifically for a startup environment based on this job description ,make sure the questions are basic.
+        prompt = f"""Generate 8-10 pre-screening basic questions specifically for a startup environment based on this job description ,make sure the questions are basic.
         Focus on:
         1. Adaptability to fast-paced environments
         2. Problem-solving in resource-constrained situations
@@ -386,7 +386,7 @@ class MultilingualAssistant:
 
     def generate_questions(self):
         """Generate more sophisticated interview questions from job description"""
-        prompt = f"""Based on this job description, generate 7-10 high-quality interview questions that would effectively screen candidates.
+        prompt = f"""Based on this job description, generate 7-10 high-quality easy to medium level interview questions that would effectively screen candidates easy to medium level only .
         Organize them by category (technical, behavioral, situational).
         For each question, include what a good answer should cover.
 
