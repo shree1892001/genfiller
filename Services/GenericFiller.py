@@ -10,6 +10,8 @@ from pypdf.generic import DictionaryObject, NameObject, BooleanObject, ArrayObje
 
 from pydantic_ai import Agent
 from pydantic_ai.models.gemini import GeminiModel
+from pydantic_ai.providers.google_gla import GoogleGLAProvider
+
 from pydantic import BaseModel, field_validator
 
 
@@ -37,8 +39,9 @@ class FieldMatch(BaseModel):
 class MultiAgentFormFiller:
     def __init__(self):
         self.agent = Agent(
-            model=GeminiModel("gemini-1.5-flash", api_key=API_KEYS["field_matcher"]),
-            system_prompt="You are an expert at mapping PDF fields to JSON keys and filling them immediately."
+            model=GeminiModel("gemini-1.5-flash", provider=GoogleGLAProvider(api_key=API_KEYS["field_matcher"])),
+            system_prompt="You are an expert at mapping PDF fields to JSON keys and filling them immediately.",
+
         )
 
     # async def extract_pdf_fields(self, pdf_path: str) -> Dict[str, int]:
@@ -236,7 +239,7 @@ class MultiAgentFormFiller:
 
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\arizonallc.pdf"
+    template_pdf = "D:\\demo\\Services\\Maine.pdf"
     json_path = "D:\\demo\\Services\\form_data1.json"
     output_pdf = "D:\\demo\\Services\\fill_smart17.pdf"
 

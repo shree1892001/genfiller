@@ -16,6 +16,7 @@ from difflib import SequenceMatcher
 from pydantic_ai import Agent
 from pydantic_ai.models.gemini import GeminiModel
 from pydantic import BaseModel, field_validator
+from pydantic_ai.providers.google_gla import GoogleGLAProvider
 
 from Common.constants import *
 
@@ -73,7 +74,7 @@ class OCRFieldMatch(BaseModel):
 class MultiAgentFormFiller:
     def __init__(self):
         self.agent = Agent(
-            model=GeminiModel("gemini-1.5-flash", api_key=API_KEYS["field_matcher"]),
+            model=GeminiModel("gemini-1.5-flash", provider=GoogleGLAProvider(api_key=API_KEYS["field_matcher"])),
             system_prompt="You are an expert at mapping PDF fields to JSON keys and filling them immediately."
         )
 
@@ -184,12 +185,6 @@ class MultiAgentFormFiller:
         flat_json = self.flatten_json(json_data)
         field_context = await self.analyze_field_context(pdf_fields, ocr_text_elements)
 
-        # Initialize progress tracking
-        total_fields = len(pdf_fields)
-        print(f"Total fields to process: {total_fields}")
-        progress = 0
-        self.update_progress(progress, total_fields)
-
         state = ""
         # Print available JSON fields for debugging
         print("Available JSON fields:")
@@ -198,6 +193,7 @@ class MultiAgentFormFiller:
             if key == "State.stateFullDesc" or key == "data.State.stateFullDesc" or key == "data.orderDetails.strapiOrderFormJson.State.stateFullDesc":
                 print(flat_json[key])
                 state = flat_json[key]
+
                 print(state)
 
         if state == "Pennsylvania":
@@ -228,10 +224,6 @@ class MultiAgentFormFiller:
                 field_context=json.dumps(field_context, indent=2, cls=NumpyEncoder)
             )
 
-        # Update progress - AI matching phase
-        progress += 10  # Allocate 10% for AI setup
-        self.update_progress(progress, total_fields)
-
         matches, ocr_matches = [], []
         for attempt in range(max_retries):
             response = await self.agent.run(prompt)
@@ -250,10 +242,6 @@ class MultiAgentFormFiller:
             print("⚠️ No valid field matches were found after all attempts.")
             return False
 
-        # Update progress - AI matching complete
-        progress += 20  # Allocate 20% for AI matching
-        self.update_progress(progress, total_fields)
-
         temp_output = f"{output_pdf}.temp"
         shutil.copy2(pdf_path, temp_output)
 
@@ -269,33 +257,20 @@ class MultiAgentFormFiller:
                 ) for m in ocr_matches
             ]
 
-            # Calculate remaining progress percentage for field filling
-            fields_progress_allocation = 60  # Allocate 60% for field filling
-            fields_per_percent = max(1, len(combined_matches) / fields_progress_allocation)
-
-            # Use the modified version of fill_pdf_immediately that updates progress
-            success = self.fill_pdf_immediately(temp_output, combined_matches, pdf_fields,
-                                                progress, total_fields, fields_per_percent)
+            success = self.fill_pdf_immediately(temp_output, combined_matches, pdf_fields)
 
             if not success:
                 print("⚠️ Some fields may not have been filled correctly.")
 
+            if not success:
+                print("⚠️ Some fields may not have been filled correctly.")
         except Exception as e:
             print(f"❌ Error during filling: {e}")
             return False
 
-        # Update progress - Almost complete
-        progress = 90  # Allocate 90% before finalization
-        self.update_progress(progress, total_fields)
-
         try:
             self.finalize_pdf(temp_output, output_pdf)
             print(f"✅ Finalized PDF saved to: {output_pdf}")
-
-            # Update progress - Complete
-            progress = 100
-            self.update_progress(progress, total_fields)
-
             return self.verify_pdf_filled(output_pdf)
         except Exception as e:
             print(f"❌ Error during finalization: {e}")
@@ -304,92 +279,9 @@ class MultiAgentFormFiller:
             try:
                 shutil.copy2(temp_output, output_pdf)
                 print(f"✅ Alternative save successful: {output_pdf}")
-
-                # Update progress - Complete
-                progress = 100
-                self.update_progress(progress, total_fields)
-
                 return self.verify_pdf_filled(output_pdf)
             except Exception as e2:
                 print(f"❌ Alternative save also failed: {e2}")
-                return False
-
-    def update_progress(self, current: int, total: int):
-        """Display progress percentage for form filling process."""
-        percentage = min(100, int((current / total) * 100)) if total > 0 else 0
-        progress_bar_length = 30
-        filled_length = int(progress_bar_length * current / total) if total > 0 else 0
-
-        bar = '█' * filled_length + '░' * (progress_bar_length - filled_length)
-        print(f"\rProgress: |{bar}| {percentage}% Complete", end="")
-
-        if percentage == 100:
-            print()  # Add newline when complete
-
-    def fill_pdf_immediately(self, output_pdf: str, matches: List[FieldMatch],
-                             pdf_fields: Dict[str, Dict[str, Any]],
-                             current_progress: int = 0, total: int = 100,
-                             fields_per_percent: float = 1.0) -> bool:
-        """Fills PDF form fields using PyMuPDF (fitz) with improved handling of readonly fields and progress tracking."""
-        doc = fitz.open(output_pdf)
-        filled_fields = []
-
-        updates = []
-        for match in matches:
-            if match.pdf_field and match.suggested_value is not None:
-                field_info = pdf_fields.get(match.pdf_field)
-
-                if not field_info:
-                    print(f"⚠️ Field '{match.pdf_field}' not found in PDF")
-                    continue
-
-                if field_info["is_readonly"]:
-                    print(f"⚠️ Skipping readonly field '{match.pdf_field}' - will handle via OCR")
-                    continue
-
-                page_num = field_info["page_num"]
-                updates.append((page_num, match.pdf_field, match.suggested_value))
-
-        # Calculate how many fields processed for each percentage point
-        progress_update_interval = max(1, int(len(updates) / 60))
-
-        for idx, (page_num, field_name, value) in enumerate(updates):
-            page = doc[page_num]
-            for widget in page.widgets():
-                if widget.field_name == field_name:
-                    print(f"✍️ Filling: '{value}' → '{field_name}' (Page {page_num + 1})")
-                    try:
-                        widget.field_value = str(value)
-                        widget.update()
-                        filled_fields.append(field_name)
-                    except Exception as e:
-                        print(f"⚠️ Error filling {field_name}: {e}")
-                    break
-
-            # Update progress periodically
-            if idx % progress_update_interval == 0 or idx == len(updates) - 1:
-                new_progress = current_progress + int((idx + 1) / len(updates) * 60)
-                self.update_progress(new_progress, total)
-
-        try:
-            # Remove garbage and incremental parameters to fix the error
-            doc.save(output_pdf, deflate=True, clean=True)
-            print(f"✅ Saved PDF with {len(filled_fields)} filled fields")
-            doc.close()
-            return len(filled_fields) > 0
-        except Exception as e:
-            print(f"❌ Error saving PDF: {e}")
-
-            try:
-                temp_path = f"{output_pdf}.tmp"
-                doc.save(temp_path, deflate=True, clean=True)
-                doc.close()
-                shutil.move(temp_path, output_pdf)
-                print(f"✅ Saved PDF using alternative method")
-                return len(filled_fields) > 0
-            except Exception as e2:
-                print(f"❌ Alternative save also failed: {e2}")
-                doc.close()
                 return False
 
     async def analyze_field_context(self, pdf_fields: Dict[str, Dict[str, Any]],
@@ -711,9 +603,9 @@ class MultiAgentFormFiller:
 
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\NewMexicoCorp.pdf"
-    json_path = "D:\\demo\\Services\\form_data.json"
-    output_pdf = "D:\\demo\\Services\\fill_smart17.pdf"
+    template_pdf = "D:\\demo\\Services\\MichiganLLC.pdf"
+    json_path = "D:\\demo\\Services\\form_data1.json"
+    output_pdf = "D:\\demo\\Services\\fill_smart14.pdf"
 
     with open(json_path, "r", encoding="utf-8") as f:
         json_data = json.load(f)
