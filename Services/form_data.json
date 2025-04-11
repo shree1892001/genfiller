@@ -13,7 +13,7 @@
         "lastModifiedDate": "2024-10-15T11:58:06.128+0000",
         "id": 22,
         "stateShortName": "MI",
-        "stateFullDesc": "Michigan",
+        "stateFullDesc": "Arizona",
         "stateUrl": "https://cofs.lara.state.mi.us/corpweb/LoginSystem/ListNewFilings.aspx?FilingMethod=I",
         "filingWebsiteUsername": null,
         "filingWebsitePassword": null,
@@ -31,11 +31,14 @@
         "County": {
             "id": 1734,
             "countyCode": "Niagara",
-            "countyName": "Niagara",
+            "countyName": "Niagara"
+        },"State": {
             "stateId": {
-                "id": 32,
+                "id": 32
+            },
                 "stateShortName": "NY",
-                "stateFullDesc": "New York",
+                "stateFullDesc": "Arizona",
+
                 "stateUrl": "https://filings.dos.ny.gov/ords/corpanc/r/ecorp/login_desktop",
                 "filingWebsiteUsername": "redberyl",
                 "filingWebsitePassword": "yD7?ddG0!$09189",
@@ -45,7 +48,7 @@
                     "countryShortName": "USA",
                     "countryFullDesc": "United States Of America"
                 }
-            }
+
         },
         "Payload": {
             "Entity_Formation": {

@@ -80,25 +80,51 @@ class MultiAgentFormFiller:
                 label_matches = re.findall(r"([\w\s,]+)[:]\s*", text)
                 form_matches = re.findall(r"([\w\s,]+)(?:_+|\[\s*\]|\(\s*\))", text)
                 all_matches = set(label_matches + form_matches)
-
                 for match in all_matches:
                     field_name = match.strip()
-                    if field_name and len(field_name) > 2:
+
+                    print("Field ext")
+                    if field_name and len(field_name) > 1:
                         sanitized_field_name =field_name
                         fields[sanitized_field_name] = page_num
-                        print(f"✅ Extracted field: {sanitized_field_name} on page {page_num + 1}")
+                        print(f"✅ Extracted field: {field_name} on page {page_num + 1}")
 
         print(f"✅ Extracted {len(fields)} fields across {len(doc)} pages.")
         doc.close()
         return fields
     async def match_and_fill_fields(self, pdf_path: str, json_data: Dict[str, Any], output_pdf: str,
-                                    max_retries: int = 3):
+                                    max_retries: int = 5):
         """Matches fields using AI and
         fills them immediately across multiple pages."""
         pdf_fields = await self.extract_pdf_fields(pdf_path)
         flat_json = self.flatten_json(json_data)
+        state = ""
+        # Print available JSON fields for debugging
+        print("Available JSON fields:")
+        for key in flat_json.keys():
+            print(key, flat_json[key])
+            if key == "State.stateFullDesc" or key == "data.State.stateFullDesc" or key == "data.orderDetails.strapiOrderFormJson.State.stateFullDesc":
+                print(flat_json[key])
+                state = flat_json[key]
 
-        prompt = PDF_FIELD_MATCHING_PROMPT2.format(
+                print(state)
+        if state =='California':
+            print("Running California")
+            prompt=PDF_FIELD_MATCHING_PROMPT_CALIFORNIA.format(
+                json_data=json.dumps(flat_json, indent=2),
+                pdf_fields=json.dumps(list(pdf_fields.keys()), indent=2)
+
+            )
+        elif state == "Arizona":
+            print("Running Arizona")
+            prompt = FEILD_ARIZONA.format(
+                json_data=json.dumps(flat_json, indent=2),
+                pdf_fields=json.dumps(list(pdf_fields.keys()), indent=2)
+
+            )
+
+        else:
+            prompt = PDF_FIELD_MATCHING_PROMPT2.format(
             json_data=json.dumps(flat_json, indent=2),
             pdf_fields=json.dumps(list(pdf_fields.keys()), indent=2)
         )
@@ -212,7 +238,7 @@ async def main():
     form_filler = MultiAgentFormFiller()
     template_pdf = "D:\\demo\\Services\\arizonallc.pdf"
     json_path = "D:\\demo\\Services\\form_data1.json"
-    output_pdf = "D:\\demo\\Services\\fill_smart15.pdf"
+    output_pdf = "D:\\demo\\Services\\fill_smart17.pdf"
 
     with open(json_path, "r", encoding="utf-8") as f:
         json_data = json.load(f)
