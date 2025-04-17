@@ -476,9 +476,10 @@ class MultilingualAssistant:
             return "Could not evaluate this response."
 
     def conduct_interview(self):
-        """Enhanced interview conduction with real-time feedback"""
+        """Enhanced interview conduction with real-time feedback and multimodal input"""
         self.speak("Let's begin the interview. I'll ask you questions based on the job description.")
         self.speak(f"There will be {len(self.screening_questions)} questions in total.")
+        self.speak("You can answer by speaking or typing your responses.")
 
         for i, question in enumerate(self.screening_questions):
             self.speak(f"Question {i + 1} of {len(self.screening_questions)}:")
@@ -488,11 +489,45 @@ class MultilingualAssistant:
             response = None
 
             for attempt in range(max_attempts):
-                response = self.listen(timeout=30)
-                if response:
+                # Try to get speech response first
+                self.speak("Please speak your answer now.", wait=False)
+                print("\nSpeak now or type your answer below (press Enter when done):")
+
+                # Start speech recognition thread
+                speech_response = None
+                text_response = None
+
+                def listen_thread():
+                    nonlocal speech_response
+                    speech_response = self.listen(timeout=15)
+
+                # Start listening thread
+                t = threading.Thread(target=listen_thread)
+                t.start()
+
+                # Get text input simultaneously
+                try:
+                    text_response = input("Your answer (waiting 15 seconds for speech...):\n").strip()
+                except KeyboardInterrupt:
+                    text_response = None
+
+                # Wait for thread to complete
+                t.join(timeout=0)
+
+                # Determine which response to use
+                if speech_response:
+                    response = speech_response
+                    print(f"Received speech response: {response}")
                     break
-                elif attempt < max_attempts - 1:
-                    self.speak("I didn't catch that. Could you please repeat your answer?")
+                elif text_response:
+                    response = text_response
+                    print(f"Received text response: {response}")
+                    break
+                else:
+                    if attempt < max_attempts - 1:
+                        self.speak("I didn't get a response. Please try again.")
+                    else:
+                        self.speak("Moving to the next question.")
 
             if response:
                 evaluation = self.evaluate_response(question, response)

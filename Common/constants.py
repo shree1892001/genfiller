@@ -2818,6 +2818,232 @@ You MUST respond with a valid JSON object in this EXACT format with no deviation
 - Each match must include all five required properties shown above
 - JSON syntax must follow RFC 8259 specification exactly
 """
+
+Fill_MAINE= """
+# ULTRA-CRITICAL PDF FORM FIELD MATCHING SYSTEM - MAINE BUSINESS ENTITY SPECIALIZED VERSION
+# ⚠️⚠️ FAILURE TO FOLLOW ANY INSTRUCTION WILL RESULT IN IMMEDIATE FORM REJECTION, LEGAL CONSEQUENCES, AND FINANCIAL PENALTIES ⚠️⚠️
+
+I need to fill Maine business entity registration PDF forms (LLC Certificate of Formation or Corporation Articles of Incorporation) with data from a JSON object with 100% ACCURACY and ABSOLUTE ZERO TOLERANCE FOR ERRORS. This is a MISSION-CRITICAL system with SEVERE LEGAL, FINANCIAL AND REGULATORY CONSEQUENCES for incorrect form submissions.
+
+## 🚨 SYSTEM FAILURE NOTIFICATION - EXTREME ALERT LEVEL 🚨
+
+THE CURRENT FIELD MATCHING SYSTEM HAS CATASTROPHICALLY FAILED, RESULTING IN:
+- LEGAL DOCUMENT REJECTIONS BY THE MAINE SECRETARY OF STATE
+- SUBSTANTIAL FINANCIAL PENALTIES AND LATE FEES (EXCEEDING $10,000 PER INSTANCE)
+- BUSINESS FORMATION FAILURES AND ENTITY REGISTRATION DENIALS
+- LEGAL LIABILITY FOR INCORRECT FILINGS WITH POTENTIAL PERSONAL LIABILITY
+- REGULATORY COMPLIANCE VIOLATIONS TRIGGERING INVESTIGATIONS
+
+## 🔴 CRITICAL FAILURE ALERT: TWO MAJOR ISSUES IDENTIFIED 🔴
+1. MAINE REGISTERED AGENT (CLERK) INFORMATION NOT BEING PROPERLY POPULATED
+2. ENTITY NAME FIELDS NOT BEING POPULATED WITH REQUIRED DESIGNATORS
+
+THESE FAILURES HAVE RESULTED IN FORM REJECTIONS AND ADMINISTRATIVE DISSOLUTION PROCEEDINGS
+IMMEDIATE REMEDIATION WITH ENHANCED PROTOCOLS IS MANDATORY
+
+## FORM-SPECIFIC FIELD MAPPING REQUIREMENTS:
+
+### I. MAINE LLC (MLLC-6) CERTIFICATE OF FORMATION REQUIREMENTS
+
+#### 🔴 1. ENTITY NAME PROTOCOL - SUPREME PRIORITY
+- ENTITY NAME MUST BE POPULATED IN "FIRST" FIELD
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.LLC_Name` or `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+- NAME MUST CONTAIN "LLC", "L.L.C.", "Limited Liability Company", "LC", "L.C.", "Limited Company", or for low-profit LLC "L3C" or "l3c"
+- REFERENCE: 31 MRSA §1508
+
+#### 🔴 2. FILING DATE PROTOCOL - SUPREME PRIORITY
+- "SECOND" FIELD MUST BE PROPERLY SELECTED: Either "Date of this filing" or "Later effective date"
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Effective_Date`
+- If effective date is provided and in the future, select "Later effective date" and enter date
+- Otherwise, select "Date of this filing"
+
+#### 3. LOW-PROFIT LLC DESIGNATION PROTOCOL
+- ONLY CHECK "THIRD" FIELD IF LOW-PROFIT LLC
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Type`
+- If entity type contains "Low-Profit" or "L3C", check the box
+- REFERENCE: 31 MRSA §1611
+
+#### 4. PROFESSIONAL LLC DESIGNATION PROTOCOL
+- ONLY CHECK "FOURTH" FIELD IF PROFESSIONAL LLC
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Type`
+- If entity type contains "Professional" or "PLLC", check the box and enter professional services
+- Professional services: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Professional_Services`
+- REFERENCE: 13 MRSA Chapter 22-A
+
+#### 🏛️ 5. REGISTERED AGENT PROTOCOL - LLC FORM
+REGISTERED AGENT INFORMATION MUST BE POPULATED IN "FIFTH" FIELD with EXTREME DILIGENCE:
+
+5.1 SELECT EITHER Commercial or Noncommercial Registered Agent:
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Type`
+- If Commercial, populate CRA Public Number: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_CRA_Number`
+- If Commercial, populate Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+
+5.2 IF NONCOMMERCIAL REGISTERED AGENT:
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+- Physical location (NOT P.O. Box): `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_Address_Line1`
+- City, State, Zip: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_City`, `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_State`, `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_Zip_Code`
+- Mailing address if different: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Mailing_Address.RA_Mailing_Address_Line1`
+
+5.3 CRITICAL REMINDER: "SIXTH" FIELD must be checked to indicate registered agent has consented to serve
+- REFERENCE: 5 MRSA §105.2
+
+#### 6. STATEMENT OF AUTHORITY PROTOCOL
+- ONLY CHECK "SEVENTH" FIELD IF STATEMENT OF AUTHORITY IS PROVIDED
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Statement_of_Authority`
+- If statement of authority is provided, check box and enter exhibit letter
+- REFERENCE: 31 MRSA §1542.1
+
+#### 7. DATE AND SIGNATURE PROTOCOL - LLC FORM
+- Date: Current date in MM/DD/YYYY format
+- Signature: Leave blank for electronic submission
+- Name and title of signer: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Name` and `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Organizer_Information.Org_Title`
+- REFERENCE: 31 MRSA §1676.1.A
+
+### II. MAINE BUSINESS CORPORATION (MBCA-6) ARTICLES OF INCORPORATION REQUIREMENTS
+
+#### 🔴 1. ENTITY NAME PROTOCOL - SUPREME PRIORITY
+- ENTITY NAME MUST BE POPULATED IN "FIRST" FIELD
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Corporation_Name` or `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Name`
+
+#### 2. PROFESSIONAL CORPORATION DESIGNATION PROTOCOL
+- ONLY CHECK "SECOND" FIELD IF PROFESSIONAL CORPORATION
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Type`
+- If entity type contains "Professional" or "P.A." or "P.C.", check the box and enter professional services
+- Professional services: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Professional_Services`
+- REFERENCE: 13 MRSA Chapter 22-A
+
+#### 3. BENEFIT CORPORATION DESIGNATION PROTOCOL
+- ONLY CHECK "THIRD" FIELD IF BENEFIT CORPORATION
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Entity_Type`
+- If entity type contains "Benefit" or "B Corp", check the box
+- REFERENCE: 13-C MRSA §1803
+
+#### 🏛️ 4. CLERK PROTOCOL - CORPORATION FORM
+CLERK INFORMATION MUST BE POPULATED IN "FOURTH" FIELD with EXTREME DILIGENCE:
+
+4.1 SELECT EITHER Commercial or Noncommercial Clerk:
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Type`
+- If Commercial, populate CRA Public Number: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_CRA_Number`
+- If Commercial, populate Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+
+4.2 IF NONCOMMERCIAL CLERK:
+- Name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Name`
+- Physical location (NOT P.O. Box): `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_Address_Line1`
+- City, State, Zip: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_City`, `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_State`, `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Address.RA_Zip_Code`
+- Mailing address if different: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Registered_Agent.RA_Mailing_Address.RA_Mailing_Address_Line1`
+
+4.3 CRITICAL REMINDER: "FIFTH" FIELD must be checked to indicate clerk has consented to serve
+- REFERENCE: 5 MRSA §108.3
+
+#### 5. SHARES PROTOCOL - CORPORATION FORM
+- "SIXTH" FIELD MUST BE PROPERLY SELECTED and POPULATED
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Share_Structure`
+- If only one class of shares:
+  * Check first box
+  * Number of authorized shares: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Share_Structure.Total_Shares` or `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Number_of_Shares`
+  * Optional class name: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Share_Structure.Share_Class`
+- If multiple classes or series:
+  * Check second box
+  * Enter exhibit letter
+  * REFERENCE: 13-C MRSA §601
+
+#### 6. DIRECTORS PROTOCOL - CORPORATION FORM
+- "SEVENTH" FIELD MUST BE PROPERLY SELECTED
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Management_Type`
+- Check first box if corporation will have a board of directors (default)
+- Check second box if corporation will be managed by shareholders
+- REFERENCE: 13-C MRSA §743
+
+#### 7. OPTIONAL PROVISIONS PROTOCOL - CORPORATION FORM
+- "EIGHTH" FIELD MAY CONTAIN OPTIONAL PROVISIONS
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Director_Provisions`
+- Number of directors limits: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Min_Directors` and `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Max_Directors`
+- Director liability: If `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Director_Liability_Limitation` is "Yes", check second box
+- Indemnification: If `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Director_Indemnification` is "Yes", check third box
+- REFERENCE: 13-C MRSA §§202, 857 and 859
+
+#### 8. PREEMPTIVE RIGHTS PROTOCOL
+- ONLY CHECK "NINTH" FIELD IF PREEMPTIVE RIGHTS ARE SELECTED
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Preemptive_Rights`
+- If preemptive rights value is "Yes", check the box
+- REFERENCE: 13-C MRSA §641
+
+#### 9. ADDITIONAL PROVISIONS PROTOCOL
+- ONLY CHECK "TENTH" FIELD IF ADDITIONAL PROVISIONS ARE PROVIDED
+- SOURCE PATH: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Additional_Provisions`
+- If additional provisions are provided, check box and enter exhibit letter
+- REFERENCE: 13-C MRSA §202 and 13-C MRSA §1811
+
+#### 10. INCORPORATOR PROTOCOL - CORPORATION FORM
+- Date: Current date in MM/DD/YYYY format
+- Signature: Leave blank for electronic submission
+- Name of incorporator: `data.orderDetails.strapiOrderFormJson.Payload.Entity_Formation.Incorporator_Information.Inc_Name`
+- REFERENCE: 13-C MRSA §121.5
+
+## MANDATORY MULTI-STAGE VALIDATION PROCEDURE:
+
+### STAGE 1: DOCUMENT TYPE IDENTIFICATION
+- DETERMINE if the PDF is an LLC or Corporation form based on form title and field structure
+- SELECT appropriate field mapping protocol based on document type
+- INITIALIZE appropriate validation rules for the identified document type
+
+### STAGE 2: FIELD IDENTIFICATION AND MAPPING
+- Create complete inventory of ALL PDF form fields for the identified document type
+- Classify each field by type and purpose based on the form structure
+- Identify matching JSON paths for each field
+
+### STAGE 3: VALUE POPULATION AND VALIDATION
+- Populate each field with appropriate value from JSON
+- Validate format compliance for each populated field
+- Verify consistency across related field groups
+
+### STAGE 4: CRITICAL FIELD VERIFICATION
+- Execute specialized verification for high-risk fields:
+  * Entity Name (FIRST field) - Must include required designator
+  * Registered Agent/Clerk Information (FIFTH field for LLC, FOURTH field for Corporation)
+  * Filing Date (SECOND field for LLC)
+  * Shares (SIXTH field for Corporation)
+  * Signatures and Printed Names
+- Document validation methodologies with verification timestamps
+- PERFORM DEDICATED REGISTERED AGENT/CLERK FIELD VERIFICATION with triple validation
+
+### STAGE 5: COMPREHENSIVE DOCUMENT VALIDATION
+- Calculate field coverage percentage (must be 100%)
+- Verify all required fields are populated with appropriate values
+- Check for any inconsistencies between related fields
+- CONFIRM ALL REQUIRED FIELDS ARE POPULATED
+
+## OUTPUT FORMAT REQUIREMENTS:
+
+JSON Data:
+{json_data}
+
+PDF Fields:
+{pdf_fields}
+
+You MUST respond with a valid JSON object in this EXACT format with no deviations:
+
+```json
+{{
+    "matches": [
+        {{
+            "json_field": "path.to.json.field",
+            "pdf_field": "PDF Field Name",
+            "confidence": 0.95,
+            "suggested_value": "Value to fill",
+            "reasoning": "Matched based on contextual analysis"
+        }}
+    ]
+}}
+```
+
+- The response MUST be a single, valid JSON object
+- Only use double quotes (") for JSON properties and values, never single quotes
+- Ensure all JSON syntax is perfectly valid
+- Include ONLY the JSON object in your response, with no additional text before or after
+- Each match must include all five required properties shown above
+- JSON syntax must follow RFC 8259 specification exactly
+"""
 MISTRAL_API_KEY= "7NZvr1Bugz4jzpKuWks11jX9jMDCbkv3G"
 
 PDF_FIELD_MATCHING_PROMPT3="""

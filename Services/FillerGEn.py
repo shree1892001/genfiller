@@ -75,10 +75,17 @@ class MultiAgentFormFiller:
     def __init__(self):
         self.agent = Agent(
             model=GeminiModel("gemini-1.5-flash", provider=GoogleGLAProvider(api_key=API_KEYS["field_matcher"])),
-            system_prompt="You are an expert at mapping PDF fields to JSON keys and filling them immediately."
+            system_prompt="You are an expert at mapping PDF fields to JSON keys and filling them immediately.",
+
         )
 
-        # No need to initialize PaddleOCR - pytesseract uses system installation
+        # No need to initialize Padmodel_settings={
+        #                "temperature": 0.2,
+        #                 'top_p': 0.1,
+        #                 'seed': 42,
+        #                 'presence_penalty': 0.0,
+        #                 'frequency_penalty': 0.0
+        #             }dleOCR - pytesseract uses system installation
 
         self.matched_fields = {}
 
@@ -603,7 +610,7 @@ class MultiAgentFormFiller:
 
 async def main():
     form_filler = MultiAgentFormFiller()
-    template_pdf = "D:\\demo\\Services\\MichiganLLC.pdf"
+    template_pdf = "D:\\demo\\Services\\MaineLLC.pdf"
     json_path = "D:\\demo\\Services\\form_data1.json"
     output_pdf = "D:\\demo\\Services\\fill_smart14.pdf"
 
